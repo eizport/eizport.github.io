@@ -1,0 +1,61 @@
+# Eizport
+
+> Eizport gives Tools → Export a new screen and .wxrz bundles: content with its media, settings and post content files in one file. Choose items and what they use comes along as suggestions; import with the WordPress Importer, or send the file as a plugin that imports itself. Free and open source.
+
+WordPress plugin, version 1.0.1, for WordPress 7.0+ and PHP 7.4+, GPL. Source: https://github.com/eizport/eizport. Download: https://github.com/eizport/eizport/releases/latest/download/eizport.zip. Every page below is Markdown; the whole documentation is in one file at https://eizport.github.io/llms-full.txt.
+
+The plugin itself is agent-ready: every export, import and setting is an ability of the WordPress Abilities API (REST, PHP, MCP) — see Developers → Abilities.
+
+## What's new in 1.0.1
+
+- Fixed: Settings → Export → "As plugin: allow importing again" is saved.
+- Scripts and styles of the classic Export screen, the importer and the Export and Settings screens are enqueued files.
+- Keeping a Playground copy, which writes a file, needs the Export form's nonce.
+- readme: an "External services" section on what is sent to WordPress.org, WordPress Playground and GitHub, and when.
+
+## Site
+
+- [Overview](https://eizport.github.io/index.md): what the plugin does, features (suggestions, export as a plugin too), formats, the plugins it works with (WooCommerce; ACF and Elementor not tested yet), developers, FAQ.
+
+## Getting started
+
+- [Introduction](https://eizport.github.io/docs/getting-started/introduction.md): What Eizport does, how it fits into WordPress's own export and import, and where to go next.
+- [Installation](https://eizport.github.io/docs/getting-started/installation.md): Install the plugin from its release zip, check the requirements, and add the WordPress Importer for imports.
+- [Your first export](https://eizport.github.io/docs/getting-started/your-first-export.md): Export a page with its media and the homepage setting, in under a minute.
+- [Importing](https://eizport.github.io/docs/getting-started/importing.md): How a bundle is imported with the WordPress Importer, what happens to media, content files and options, and the other ways to import.
+
+## Exporting
+
+- [Export screen](https://eizport.github.io/docs/exporting/export-screen.md): The new Tools → Export screen, part by part: the header actions, the Details panel, the list and the side panels.
+- [Choosing items](https://eizport.github.io/docs/exporting/choosing-items.md): Items per content type, chosen in the side panel at once; suggestions; the Selection filter; children, attachments, reviews and roles.
+- [Options](https://eizport.github.io/docs/exporting/options.md): Export site settings one by one, by group or all at once; linked settings; what is never exported; how IDs are mapped.
+- [Media](https://eizport.github.io/docs/exporting/media.md): Which attachments come with the items exported, how media files go inside bundles, and the "Only attached media" setting.
+- [File and formats](https://eizport.github.io/docs/exporting/file-and-formats.md): Choose between WordPress's plain WXR, a .wxrz or .zip bundle, a Playground .zip and a plugin that imports itself; file names and what each one holds.
+- [As plugin](https://eizport.github.io/docs/exporting/as-plugin.md): Export a plugin that imports its own bundle: install it on the other site, check what it needs, Run import, then delete it.
+- [Saved defaults](https://eizport.github.io/docs/exporting/saved-defaults.md): Save the Export screen's choices as default, per user or for the whole site, on both screens.
+- [Classic screen](https://eizport.github.io/docs/exporting/classic-screen.md): WordPress's own Tools → Export with the plugin's choices added, for those who prefer it; also on phones.
+
+## Formats
+
+- [WXRZ bundle](https://eizport.github.io/docs/formats/wxrz-bundle.md): The .wxrz format, entry by entry — manifest, WXR, media, post_content and options.json — and the safety rules when one is opened.
+- [ZIP bundle](https://eizport.github.io/docs/formats/zip-bundle.md): The same bundle as a plain .zip, which any computer opens — how to turn it on and how it is read.
+- [Playground zip](https://eizport.github.io/docs/formats/playground-zip.md): A WordPress Playground blueprint bundle that boots a site with the exported content, media, theme and plugins — how it's built and how to run it.
+
+## Settings
+
+- [General](https://eizport.github.io/docs/settings/general.md): The plugin's Settings → General — whether Tools → Export is replaced, the classic screen, saved defaults and how long copies are kept.
+- [Export settings](https://eizport.github.io/docs/settings/export-settings.md): The plugin's Settings → Export — attached media, linked settings, .zip bundles and content as .html files.
+- [Copies](https://eizport.github.io/docs/settings/copies.md): The exports kept on the site — download, open in Playground, copy the link, import, delete — and how their links work.
+
+## Developers
+
+- [AI agents](https://eizport.github.io/docs/developers/ai-agents.md): Let an AI agent export, import and manage copies for you: the abilities over MCP, what to ask, what the agent sees, and the safety built in.
+- [Abilities](https://eizport.github.io/docs/developers/abilities.md): Every eizport/* ability of the WordPress Abilities API — input, output, permission — over REST, PHP and MCP.
+- [Hooks](https://eizport.github.io/docs/developers/hooks.md): Every filter and action of Eizport, with its parameters and an example.
+- [Compatibilities](https://eizport.github.io/docs/developers/compatibilities.md): Which plugins are supported (WooCommerce) and which aren't officially yet (ACF, Elementor), how support is built from the public hooks, and how a plugin ships its own.
+- [WP-CLI](https://eizport.github.io/docs/developers/wp-cli.md): Export and import bundles from the command line with wp eizport export and wp eizport import, keep a delivery in a folder to compare, and run the abilities with wp eval.
+
+## Reference
+
+- [FAQ](https://eizport.github.io/docs/reference/faq/)
+- [Changelog](https://eizport.github.io/docs/reference/changelog/)
