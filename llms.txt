@@ -1,0 +1,102 @@
+# Eizport
+
+> Eizport gives Tools → Export a new screen and .wxrz bundles: content with its media, settings and post content files in one file. Choose items and what they use comes along as suggestions; import with the WordPress Importer, or send the file as a plugin that imports itself. Free and open source.
+
+WordPress plugin, version 1.1.0, for WordPress 7.0+ and PHP 7.4+, GPL. Source: https://github.com/eizport/eizport. Install: https://wordpress.org/plugins/eizport/ (or `wp plugin install eizport`). Every page below is Markdown; the whole documentation is in one file at https://eizport.github.io/llms-full.txt.
+
+The plugin itself is agent-ready: every export, import and setting is an ability of the WordPress Abilities API (REST, PHP, MCP) — see Developers → Abilities.
+
+## What's new in 1.1.0
+
+- Added: Playground options: a Language group — the Playground .zip opens in the site's language (the default), yours or English, with the translations of WordPress, the themes and the plugins (fetched from WordPress.org, or this site's inside the .zip).
+- Added: Block themes: templates and template parts edited in the Site Editor on rows of their own (Editor templates, Editor template parts), item by item with a preview. They travel in the WXR with the images they use; on import each replaces the same template of the same theme instead of adding a copy ("Header 2"), and its navigations, images and links point to the ones on the other site.
+- Added: Elementor, with its own exporter and importer: a row of its own exports the site settings (the Kit) and templates in Elementor's formats; pages built with Elementor carry their design as post_content/<slug>.json; on import, Elementor's own import brings them in, with the images the bundle brought, templates and links pointing to the items there, and a later delivery updates instead of adding copies; also in Playground.
+- Added: Advanced Custom Fields (ACF): a row of its own exports its post types, taxonomies and field groups in ACF's own export format, imported before the content (updated by key); the fields that store IDs (image, file, post object, relationship, page link, taxonomy, user) are remapped on import, also in Playground; field groups, linked posts and the media of image and file fields are suggested or come along.
+- Added: Bundles say which Eizport made them and the oldest that reads them: a bundle that needs a newer Eizport is refused with a message that says which version (on the upload, wp eizport import, the import ability and a bundle plugin's screen, which offers Update now); bundles from 1.0.x still import. The WordPress Importer must be 0.9.6 or newer; a version newer than the tested one imports with a warning. The manifest names its JSON Schema (https://eizport.github.io/schemas/1.1/manifest.json): editors check a manifest edited by hand, and the import checks it against the same schema.
+- Added: Multisite: each site of a network exports and imports on its own — saved defaults per site, files in the site's uploads, links mapped between subsites — and uninstalling cleans every site.
+- Added: Export the site's look on rows of its own, item by item — Customizer theme mods and custom CSS rules, the Site Editor's style groups and CSS rules, widgets (classic and block) — with a preview of each and the media they use. On import, CSS rules are added to the other site's CSS (at the end, at the start, or replacing it) between head/tail comments named after the file; theme mods, style groups and widgets join the other site's instead of replacing them.
+- Added: Export navigation menus on their own row — classic menus with their items and theme locations, and block navigations — and bring them back on import, pointing to the imported pages.
+- Added: Playground options: must-use plugins — the ones chosen go in the Playground .zip with the folders they load, and the blueprint writes them before the import (not the platform's loaders nor Eizport's own).
+- Added: Playground options: the button (renamed from "Themes and plugins") also sets where the Playground .zip opens — the home page, the dashboard, a page of the site (as a relative path) or a path —, its two groups open one at a time.
+- Changed: The plugin's row on the Plugins screen keeps only Settings: no "Import .wxrz" or "Install the WordPress Importer" link — importing starts from Tools → Import.
+- Changed: A bundle plugin's screen is one screen, with or without Eizport: Eizport is one more line in Before importing (Install Now, Activate or Update now, done right there), and what needs it waits — What it holds dimmed, Update existing and Run import disabled. The screen is no longer an item under Tools: Run import, on the plugin's row on the Plugins screen, opens it. Tools → Import lists it too, set apart from the other importers, and shows the list while it waits. "Update existing" names the content types the export holds — on the Export screen, the importer's step 1 and a bundle plugin's screen — and isn't offered with none.
+- Changed: The Options row's Basics and Appearance groups no longer carry the theme mods (they have their own row) and now carry the block themes' site logo; imported theme mods are merged into the site's instead of replacing them.
+- Changed: What a file holds no longer decides on its own: an import sets the options of the groups, the theme mods and the widgets, and any other option in the file only when whoever imports checks it (step 1 of the importer, a bundle plugin's screen) or names it (--options, the ability's options); WP-CLI and the ability update existing items only when asked. Options, theme mods and widget fields named like secrets (passwords, tokens, API and license keys) are never exported nor listed. On a network, a site administrator's Playground .zip takes only the plugins active on that site and the themes it may use.
+- Changed: Bundles are plain .zip files by default (Settings → Export → "Bundle as .zip" now on), inside a plugin made as plugin too; turned off, they are .wxrz as before.
+- Fixed: Imported content keeps working with its media and pages: the IDs in Image, Gallery, Cover, Media & Text, File, Video and Audio blocks, in navigation links and in block widgets point to the imported items, not to the other site's.
+- Fixed: Links to the source site in imported content — pages, products, categories, navigation links, menus' custom links, widgets — point to this site after an import, in new and updated items.
+- Fixed: An attachment the site already has gets its URLs in the imported content pointed to the file here on every import, not only with "Update existing" on.
+- Fixed: Checked with the WordPress Importer 0.9.7: an edited image's link to its original is mapped on import instead of dropped (or left pointing at the exporting site's ID with 0.9.6).
+- Fixed: The Playground .zip installs a theme or plugin from the WordPress.org directory only in a version the directory has; a development, beta or RC copy goes inside the .zip. Without Eizport, a bundle plugin installs it from the plugin directory.
+- Fixed: An export of chosen types carries its terms in full — description, parent and term meta (a product category's thumbnail and display type), with their ancestors — not only their names.
+- Fixed: The Playground .zip installs plugins active or inactive as they are on the site, instead of activating them all.
+- Fixed: A .zip bundle is read in blocks against its real size (an entry that says it is small but inflates to more is refused, and no entry is loaded whole in memory), and needs PHP's ZipArchive; "Run import" only runs for a bundle plugin active on the site; the Playground landing page only opens a path of the exported site; uninstall also removes the note of imported widgets.
+- Fixed: Importing a file made elsewhere is safer for users who may not post unfiltered HTML (a site admin on a network): templates, template parts and widgets from the file go through the same HTML filter as other content, custom CSS needs the right to edit CSS, Advanced Custom Fields items need ACF's own capability and never bring PHP callbacks, an existing page keeps its Elementor design unless the import updates existing items, and a malformed source address in the file never rewrites links.
+
+## Site
+
+- [Overview](https://eizport.github.io/index.md): what the plugin does, features (suggestions, export as a plugin too), formats, the plugins it works with (WooCommerce; ACF and Elementor not tested yet), developers, FAQ.
+
+## Getting started
+
+- [Introduction](https://eizport.github.io/docs/getting-started/introduction.md): What Eizport does, how it fits into WordPress's own export and import, and where to go next.
+- [Installation](https://eizport.github.io/docs/getting-started/installation.md): Install the plugin from the WordPress.org plugin directory, check the requirements, and add the WordPress Importer for imports.
+- [Your first export](https://eizport.github.io/docs/getting-started/your-first-export.md): Export a page with its media and the homepage setting, in under a minute.
+- [Importing](https://eizport.github.io/docs/getting-started/importing.md): How a bundle is imported with the WordPress Importer, what happens to media, content files and options, and the other ways to import.
+- [Multisite](https://eizport.github.io/docs/getting-started/multisite.md): Eizport on a WordPress network: network or per-site activation, who can do what, where each site's files go, WP-CLI with --url, and uninstalling.
+
+## Use cases
+
+- [Header menus to staging](https://eizport.github.io/docs/use-cases/header-menus-to-staging.md): A site built locally — pages, a header menu with submenus and its theme location — repeated on staging without rebuilding the menu by hand.
+- [Theme look to staging](https://eizport.github.io/docs/use-cases/theme-look-to-staging.md): A change to a theme's look made locally — the last CSS rule, the logo, one widget, or a block theme's palette — taken to staging without touching what staging has of its own.
+- [Site header to staging](https://eizport.github.io/docs/use-cases/site-header-to-staging.md): A block theme's header redone in the Site Editor locally — a new layout, its navigation, an image — and a page template, taken to staging in place of the ones staging has, without a Header 2.
+- [Galleries to staging](https://eizport.github.io/docs/use-cases/galleries-to-staging.md): Pages built with Image, Gallery and Cover blocks, moved to a site where the media get other IDs — and still editable as they were.
+- [Internal links to staging](https://eizport.github.io/docs/use-cases/internal-links-to-staging.md): Pages that link to each other, to products and to categories, built locally and moved to staging — with every link pointing to staging, not back to the local site.
+- [Product categories to staging](https://eizport.github.io/docs/use-cases/product-categories-to-staging.md): A store's products moved with their categories as they are — descriptions, parent categories and thumbnails — not just their names.
+- [Second delivery to staging](https://eizport.github.io/docs/use-cases/second-delivery-to-staging.md): Delivering new pages to a staging site that already has the media from the first delivery — without duplicating the images and without links to the local site.
+- [Subsite to subsite](https://eizport.github.io/docs/use-cases/subsite-to-subsite.md): On a network, a site built in one subsite moved to another — the live one, or a fresh copy — with its media, links and settings pointing to the right site.
+- [Client demo in Playground](https://eizport.github.io/docs/use-cases/client-demo-in-playground.md): A new page shown to a client in WordPress Playground: one link that opens right on that page, with the site's plugins as they are.
+- [Playground in your language](https://eizport.github.io/docs/use-cases/playground-in-your-language.md): A demo of an English site shown in Portuguese in WordPress Playground: the dashboard, the theme and the plugins translated, from one link.
+- [Custom post types in Playground](https://eizport.github.io/docs/use-cases/custom-post-types-in-playground.md): A site whose post types live in a must-use plugin, shown in WordPress Playground: the plugin goes in the .zip and runs before the import.
+- [Advanced Custom Fields to staging](https://eizport.github.io/docs/use-cases/advanced-custom-fields-to-staging.md): Recipes built with Advanced Custom Fields (ACF) — their post type, taxonomy, field group and values — taken to staging with every photo, page and term they point to pointing right.
+- [Elementor to staging](https://eizport.github.io/docs/use-cases/elementor-to-staging.md): A landing page built with Elementor — its images, a saved section template and the site's global colors and fonts — taken to staging with Elementor's own importer, everything pointing to staging's items.
+
+## Exporting
+
+- [Export screen](https://eizport.github.io/docs/exporting/export-screen.md): The new Tools → Export screen, part by part: the header actions, the Details panel, the list and the side panels.
+- [Choosing items](https://eizport.github.io/docs/exporting/choosing-items.md): Items per content type, chosen in the side panel at once; suggestions; the Selection filter; children, attachments, reviews and roles.
+- [Options](https://eizport.github.io/docs/exporting/options.md): Export site settings one by one, by group or all at once; linked settings; what is never exported; how IDs are mapped.
+- [Menus](https://eizport.github.io/docs/exporting/menus.md): Classic menus with their items and theme locations, and block navigations, on their own row; what's suggested, what the import does with menus the other site already has, and the limits.
+- [Appearance](https://eizport.github.io/docs/exporting/appearance.md): The site's look on rows of its own, item by item: Customizer theme mods and CSS rules, the Site Editor's style groups, CSS rules, templates and template parts, and widgets — with a preview of each, the media they use, and how the other site takes them.
+- [Advanced Custom Fields](https://eizport.github.io/docs/exporting/advanced-custom-fields.md): Advanced Custom Fields (ACF) on a row of its own: its post types, taxonomies and field groups in ACF's own export format, imported before the content, and the fields that store IDs pointing to the items on the other site.
+- [Elementor](https://eizport.github.io/docs/exporting/elementor.md): Elementor with its own exporter and importer: the site settings (the Kit) and templates on a row of their own, each page's design as a .json file, and on import every image, template and link pointing to the items on the other site.
+- [Media](https://eizport.github.io/docs/exporting/media.md): Which attachments come with the items exported, how media files go inside bundles, and the "Only attached media" setting.
+- [File and formats](https://eizport.github.io/docs/exporting/file-and-formats.md): Choose between WordPress's plain WXR, a .wxrz or .zip bundle, a Playground .zip and a plugin that imports itself; file names and what each one holds.
+- [As plugin](https://eizport.github.io/docs/exporting/as-plugin.md): Export a plugin that imports its own bundle: install it on the other site, check what it needs, Run import, then delete it.
+- [Saved defaults](https://eizport.github.io/docs/exporting/saved-defaults.md): Save the Export screen's choices as default, per user or for the whole site, on both screens.
+- [Classic screen](https://eizport.github.io/docs/exporting/classic-screen.md): WordPress's own Tools → Export with the plugin's choices added, for those who prefer it; also on phones.
+
+## Formats
+
+- [WXRZ bundle](https://eizport.github.io/docs/formats/wxrz-bundle.md): The .wxrz format, entry by entry — manifest, WXR, media, post_content and options.json — and the safety rules when one is opened.
+- [ZIP bundle](https://eizport.github.io/docs/formats/zip-bundle.md): The same bundle as a plain .zip, which any computer opens — how to turn it on and how it is read.
+- [Playground zip](https://eizport.github.io/docs/formats/playground-zip.md): A WordPress Playground blueprint bundle that boots a site with the exported content, media, theme and plugins — how it's built and how to run it.
+
+## Settings
+
+- [General](https://eizport.github.io/docs/settings/general.md): The plugin's Settings → General — whether Tools → Export is replaced, the classic screen, saved defaults and how long copies are kept.
+- [Export settings](https://eizport.github.io/docs/settings/export-settings.md): The plugin's Settings → Export — attached media, linked settings, .zip bundles and content as .html files.
+- [Copies](https://eizport.github.io/docs/settings/copies.md): The exports kept on the site — download, open in Playground, copy the link, import, delete — and how their links work.
+
+## Developers
+
+- [AI agents](https://eizport.github.io/docs/developers/ai-agents.md): Let an AI agent export, import and manage copies for you: the abilities over MCP, what to ask, what the agent sees, and the safety built in.
+- [Abilities](https://eizport.github.io/docs/developers/abilities.md): Every eizport/* ability of the WordPress Abilities API — input, output, permission — over REST, PHP and MCP.
+- [Hooks](https://eizport.github.io/docs/developers/hooks.md): Every filter and action of Eizport, with its parameters and an example.
+- [Compatibilities](https://eizport.github.io/docs/developers/compatibilities.md): Which plugins are supported (WooCommerce, Advanced Custom Fields, Elementor), how support is built from the public hooks, and how a plugin ships its own.
+- [WP-CLI](https://eizport.github.io/docs/developers/wp-cli.md): Export and import bundles from the command line with wp eizport export and wp eizport import, keep a delivery in a folder to compare, and run the abilities with wp eval.
+
+## Reference
+
+- [FAQ](https://eizport.github.io/docs/reference/faq/)
+- [Changelog](https://eizport.github.io/docs/reference/changelog/)

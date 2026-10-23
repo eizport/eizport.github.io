@@ -1,0 +1,2307 @@
+# Eizport — full documentation
+
+> Eizport gives Tools → Export a new screen and .wxrz bundles: content with its media, settings and post content files in one file. Choose items and what they use comes along as suggestions; import with the WordPress Importer, or send the file as a plugin that imports itself. Free and open source.
+
+Version 1.1.0. Requires WordPress 7.0+ and PHP 7.4+.
+
+---
+
+## What's new in 1.1.0
+
+- Added: Playground options: a Language group — the Playground .zip opens in the site's language (the default), yours or English, with the translations of WordPress, the themes and the plugins (fetched from WordPress.org, or this site's inside the .zip).
+- Added: Block themes: templates and template parts edited in the Site Editor on rows of their own (Editor templates, Editor template parts), item by item with a preview. They travel in the WXR with the images they use; on import each replaces the same template of the same theme instead of adding a copy ("Header 2"), and its navigations, images and links point to the ones on the other site.
+- Added: Elementor, with its own exporter and importer: a row of its own exports the site settings (the Kit) and templates in Elementor's formats; pages built with Elementor carry their design as post_content/<slug>.json; on import, Elementor's own import brings them in, with the images the bundle brought, templates and links pointing to the items there, and a later delivery updates instead of adding copies; also in Playground.
+- Added: Advanced Custom Fields (ACF): a row of its own exports its post types, taxonomies and field groups in ACF's own export format, imported before the content (updated by key); the fields that store IDs (image, file, post object, relationship, page link, taxonomy, user) are remapped on import, also in Playground; field groups, linked posts and the media of image and file fields are suggested or come along.
+- Added: Bundles say which Eizport made them and the oldest that reads them: a bundle that needs a newer Eizport is refused with a message that says which version (on the upload, wp eizport import, the import ability and a bundle plugin's screen, which offers Update now); bundles from 1.0.x still import. The WordPress Importer must be 0.9.6 or newer; a version newer than the tested one imports with a warning. The manifest names its JSON Schema (https://eizport.github.io/schemas/1.1/manifest.json): editors check a manifest edited by hand, and the import checks it against the same schema.
+- Added: Multisite: each site of a network exports and imports on its own — saved defaults per site, files in the site's uploads, links mapped between subsites — and uninstalling cleans every site.
+- Added: Export the site's look on rows of its own, item by item — Customizer theme mods and custom CSS rules, the Site Editor's style groups and CSS rules, widgets (classic and block) — with a preview of each and the media they use. On import, CSS rules are added to the other site's CSS (at the end, at the start, or replacing it) between head/tail comments named after the file; theme mods, style groups and widgets join the other site's instead of replacing them.
+- Added: Export navigation menus on their own row — classic menus with their items and theme locations, and block navigations — and bring them back on import, pointing to the imported pages.
+- Added: Playground options: must-use plugins — the ones chosen go in the Playground .zip with the folders they load, and the blueprint writes them before the import (not the platform's loaders nor Eizport's own).
+- Added: Playground options: the button (renamed from "Themes and plugins") also sets where the Playground .zip opens — the home page, the dashboard, a page of the site (as a relative path) or a path —, its two groups open one at a time.
+- Changed: The plugin's row on the Plugins screen keeps only Settings: no "Import .wxrz" or "Install the WordPress Importer" link — importing starts from Tools → Import.
+- Changed: A bundle plugin's screen is one screen, with or without Eizport: Eizport is one more line in Before importing (Install Now, Activate or Update now, done right there), and what needs it waits — What it holds dimmed, Update existing and Run import disabled. The screen is no longer an item under Tools: Run import, on the plugin's row on the Plugins screen, opens it. Tools → Import lists it too, set apart from the other importers, and shows the list while it waits. "Update existing" names the content types the export holds — on the Export screen, the importer's step 1 and a bundle plugin's screen — and isn't offered with none.
+- Changed: The Options row's Basics and Appearance groups no longer carry the theme mods (they have their own row) and now carry the block themes' site logo; imported theme mods are merged into the site's instead of replacing them.
+- Changed: What a file holds no longer decides on its own: an import sets the options of the groups, the theme mods and the widgets, and any other option in the file only when whoever imports checks it (step 1 of the importer, a bundle plugin's screen) or names it (--options, the ability's options); WP-CLI and the ability update existing items only when asked. Options, theme mods and widget fields named like secrets (passwords, tokens, API and license keys) are never exported nor listed. On a network, a site administrator's Playground .zip takes only the plugins active on that site and the themes it may use.
+- Changed: Bundles are plain .zip files by default (Settings → Export → "Bundle as .zip" now on), inside a plugin made as plugin too; turned off, they are .wxrz as before.
+- Fixed: Imported content keeps working with its media and pages: the IDs in Image, Gallery, Cover, Media & Text, File, Video and Audio blocks, in navigation links and in block widgets point to the imported items, not to the other site's.
+- Fixed: Links to the source site in imported content — pages, products, categories, navigation links, menus' custom links, widgets — point to this site after an import, in new and updated items.
+- Fixed: An attachment the site already has gets its URLs in the imported content pointed to the file here on every import, not only with "Update existing" on.
+- Fixed: Checked with the WordPress Importer 0.9.7: an edited image's link to its original is mapped on import instead of dropped (or left pointing at the exporting site's ID with 0.9.6).
+- Fixed: The Playground .zip installs a theme or plugin from the WordPress.org directory only in a version the directory has; a development, beta or RC copy goes inside the .zip. Without Eizport, a bundle plugin installs it from the plugin directory.
+- Fixed: An export of chosen types carries its terms in full — description, parent and term meta (a product category's thumbnail and display type), with their ancestors — not only their names.
+- Fixed: The Playground .zip installs plugins active or inactive as they are on the site, instead of activating them all.
+- Fixed: A .zip bundle is read in blocks against its real size (an entry that says it is small but inflates to more is refused, and no entry is loaded whole in memory), and needs PHP's ZipArchive; "Run import" only runs for a bundle plugin active on the site; the Playground landing page only opens a path of the exported site; uninstall also removes the note of imported widgets.
+- Fixed: Importing a file made elsewhere is safer for users who may not post unfiltered HTML (a site admin on a network): templates, template parts and widgets from the file go through the same HTML filter as other content, custom CSS needs the right to edit CSS, Advanced Custom Fields items need ACF's own capability and never bring PHP callbacks, an existing page keeps its Elementor design unless the import updates existing items, and a malformed source address in the file never rewrites links.
+
+---
+
+## Introduction
+
+> What Eizport does, how it fits into WordPress's own export and import, and where to go next.
+
+Source: https://eizport.github.io/docs/getting-started/introduction/
+
+Eizport moves WordPress content between sites **with everything that makes it work**: the media files, the settings that point to the content, and each post's content as a readable file. It builds on the tools WordPress already has — **Tools → Export** and the **WordPress Importer** — instead of replacing them.
+
+*Screenshot: The Export screen: content types, Product reviews, Attachments and Options in one list, with the file's Details above it.*
+
+### What changes
+
+| WordPress alone | With Eizport |
+| --- | --- |
+| One content type, or everything | Several types at once, each whole or **by items** — and what they use comes up as a **suggestion** (the products a page shows, the settings that point to it, product reviews) |
+| A WXR file (`.xml`) that points to media on the old site | A **bundle** (`.wxrz` or `.zip`) with the media files inside |
+| The importer downloads every image from the old site | Media comes from the bundle: the old site can be offline |
+| Settings stay behind | **Options** go along: the ones that point to the items (homepage, shop…) are suggested and mapped to the new IDs; add any other one by one |
+| Content inside XML | Each post's content as `post_content/<slug>.html` |
+| — | A **WordPress Playground** `.zip` that boots a site with the content, theme and plugins |
+| — | **As plugin**: a plugin `.zip` that imports itself on the other site with one click ([as plugin](https://eizport.github.io/docs/exporting/as-plugin/)) |
+| The importer's own look | **Tools → Import** opens the WordPress Importer directly, dressed like the Export screen |
+| — | Every step as an **ability** (Abilities API, REST, MCP) and a **WP-CLI** command |
+
+### Not a full migration — on purpose
+
+Eizport **doesn't copy the whole database**, and that is the point:
+
+- **A full-site migration** (a database dump, a migration plugin) moves everything: transients, logs, sessions, spam, the tables of plugins removed years ago, users, the old site's URLs — and overwrites the site it lands on. Cleaning up afterwards is the hidden cost.
+- **WordPress's export** is clean but leaves gaps: the media files stay on the old site (the importer must download them, so it must be online), settings don't travel at all, the homepage stops being the homepage, and images used in content without being attached are left behind.
+
+The plugin takes **what you choose and everything it depends on**: the items, their media files, the media their content uses, the settings that point to them (with IDs remapped on import) and the settings you pick — and **merges** them into the target site. Site URLs, users, keys, roles, active plugins, transients and caches never go.
+
+Use a full migration to clone or move a whole site to new hosting. Use Eizport to move **content**: a section, a store's catalog, a set of pages, a homepage with its settings, a demo.
+
+### How it fits
+
+```text
+Tools → Export ──► eizport/export ──► .wxrz / .zip / .xml / Playground .zip
+                                          │
+Tools → Import → WordPress ◄──────────────┘  (or eizport/import, or wp eizport import)
+```
+
+- **Exporting** happens on the new Export screen (or the classic one, if you prefer) and through the `eizport/export` ability. Both run the same code: `export_wp()` with a narrowed query, plus the bundle around it.
+- **Importing** uses the WordPress Importer — or the file exported [as plugin](https://eizport.github.io/docs/exporting/as-plugin/) runs it with one click. The plugin unpacks the bundle first, answers the importer's media downloads from it, puts the `.html` contents back into the WXR, and sets the options when the import ends.
+
+### Requirements
+
+- WordPress **7.0** or later (the Export and Settings screens use WordPress's admin screen framework).
+- PHP **7.4** or later, with `zlib` (for `.wxrz`) and `ZipArchive` or core's PclZip (for `.zip`).
+- The **WordPress Importer** plugin to import (WordPress offers to install it from Tools → Import).
+
+### Next
+
+- [Install the plugin](https://eizport.github.io/docs/getting-started/installation/) and [make your first export](https://eizport.github.io/docs/getting-started/your-first-export/).
+- Learn the [Export screen](https://eizport.github.io/docs/exporting/export-screen/), or go straight to the [file formats](https://eizport.github.io/docs/formats/wxrz-bundle/) and the [abilities](https://eizport.github.io/docs/developers/abilities/).
+
+
+---
+
+## Installation
+
+> Install the plugin from the WordPress.org plugin directory, check the requirements, and add the WordPress Importer for imports.
+
+Source: https://eizport.github.io/docs/getting-started/installation/
+
+### From the plugin directory
+
+1. In WordPress, go to **Plugins → Add Plugin** and search for **Eizport** — or open its page, [wordpress.org/plugins/eizport](https://wordpress.org/plugins/eizport/).
+2. Click **Install Now**, then **Activate**. Tools → Export now opens the new Export screen.
+
+Updates come the same way, from **Dashboard → Updates**.
+
+### With WP-CLI
+
+```bash
+wp plugin install eizport --activate
+```
+
+### Development versions and older releases
+
+Every release is also on [GitHub](https://github.com/eizport/eizport/releases), as `eizport.zip`: add it in **Plugins → Add Plugin → Upload Plugin**.
+
+### Try it first
+
+Open the [live demo in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/eizport/eizport/trunk/playground/blueprint.json): a throwaway site in your browser with the plugin and sample pages.
+
+### To import
+
+Importing needs the **WordPress Importer**. On **Tools → Import**, click **Install Now** under *WordPress*, then **Run Importer**. Exporting works without it.
+
+### Requirements in detail
+
+| Requirement | Why |
+| --- | --- |
+| WordPress 7.0+ | The Export and Settings screens are built with `@wordpress/build` and booted by core's `@wordpress/boot`. |
+| PHP 7.4+ | The plugin's minimum. |
+| `zlib` | `.wxrz` bundles are gzipped tar archives. |
+| `ZipArchive` (or PclZip) | `.zip` bundles and Playground `.zip` files. Core's PclZip is the fallback. |
+| Abilities API | Part of WordPress 6.9+; the screens run the plugin's abilities. |
+
+### Uninstalling
+
+Deleting the plugin removes `wp-content/uploads/eizport/` (temporary copies and unfinished imports), its settings and the saved export defaults (the site's and every user's).
+
+
+---
+
+## Your first export
+
+> Export a page with its media and the homepage setting, in under a minute.
+
+Source: https://eizport.github.io/docs/getting-started/your-first-export/
+
+This walk-through exports one page — say, the homepage — with its images and the settings that make it the homepage, then imports it on another site.
+
+### 1. Open Tools → Export
+
+The Export screen lists what can be exported: each content type (Posts, Pages, Products…), **Attachments** and **Options**. Nothing is checked yet, which means *everything*.
+
+### 2. Choose the page
+
+Click **Pages** (or *Choose items* in its row). A side panel lists the pages with a checkbox each. Check the homepage — it shows a **Homepage** badge: the Pages row says **1 item** at once. Click **Close**.
+
+*Screenshot: The items panel: pages with their roles as badges (Homepage, Shop page…), the homepage checked.*
+
+The **Options** row now says **2 suggested**: `page_on_front` and `show_on_front` point to the page you chose ([linked settings](https://eizport.github.io/docs/exporting/options/#linked-settings)). Check the row and they come along — it still says *2 suggested*. If the homepage shows products with a WooCommerce block, the **Products** row suggests them the same way.
+
+### 3. Check the file
+
+The **Details** line above the list sums up the file — *WXRZ · default filename · media files*. Click it to open its settings:
+
+- **Format** reads **WXRZ**: a bundle, because media files and settings go with it.
+- **Media files** is on: the page's attached images, its featured image and the images in its content go inside.
+- **File name** is empty: the file gets WordPress's usual name, shown as the placeholder.
+
+### 4. Export
+
+Click **Export**. The file is written as a [copy](https://eizport.github.io/docs/settings/copies/) on the site and a notice offers **Download**.
+
+### 5. Import it
+
+On the other site, go to **Tools → Import** — it opens the WordPress Importer — upload the `.wxrz` and run the importer as usual. Or export with **As plugin** on, install that `.zip` as a plugin and click **Run import** on its screen ([as plugin](https://eizport.github.io/docs/exporting/as-plugin/)). The page, its images and the homepage setting arrive together — with the new page's ID in `page_on_front`.
+
+> The old site doesn't need to be online: the images come from the bundle.
+
+
+---
+
+## Importing
+
+> How a bundle is imported with the WordPress Importer, what happens to media, content files and options, and the other ways to import.
+
+Source: https://eizport.github.io/docs/getting-started/importing/
+
+### With the WordPress Importer
+
+Upload a `.wxrz` or `.zip` bundle on **Tools → Import → WordPress**, like any WXR file. Gzipped WXR files (`.xml.gz`) and plain `.xml` files work too.
+
+Exported [as plugin](https://eizport.github.io/docs/exporting/as-plugin/)? Install the `.zip` in **Plugins → Add Plugin → Upload Plugin** and click **Run import** on its row on the Plugins screen instead.
+
+**Tools → Import** opens the WordPress Importer directly, and its screen links to **All importers** ([Settings → General](https://eizport.github.io/docs/settings/general/) turns this off).
+
+The importer looks like the plugin's Export screen: a header with the step's main button (*Upload file and import*, *Submit*), each step in cards, and a **Choose file** button in the admin's language, on the line under its label; *Upload file and import* waits until a file is chosen. **Style Tools → Import → WordPress** in the plugin's [Settings → General](https://eizport.github.io/docs/settings/general/) turns that off; bundles are accepted either way.
+
+### Updating items that already exist
+
+The WordPress Importer skips an item that already exists, and adds a copy when only the slug matches: a theme's *Home* page becomes `home-2`, and a second delivery of the same bundle changes nothing. **Update the items that already exist (same type and slug) instead of adding copies: Pages and Posts** — it names the content types the file holds, and isn't shown when it holds none — on the importer's step 1 (and on the screen of a plugin exported [as plugin](https://eizport.github.io/docs/exporting/as-plugin/)), changes that:
+
+- an item of the same type and slug is **the** item: it gets the bundle's title, content, excerpt, order, custom fields and terms, and keeps its ID;
+- settings that point to it (the homepage, the shop page…) point to it, so the theme's *Home* becomes the homepage with the bundle's content;
+- attachments that already exist are reused, and their URLs in the updated content point to this site.
+
+It's off unless the bundle asks for it: **Update existing**, in the Export screen's **Details** panel, saves the choice in the bundle, and the box comes checked. The person importing can still uncheck it.
+
+### Versions
+
+- **A bundle made by a newer Eizport** — one that needs a version this site doesn't have — isn't imported: the upload, `wp eizport import`, the ability and a bundle plugin's screen say which Eizport it needs, and the bundle plugin offers **Update now**. Bundles made by older versions import as they did.
+- **The WordPress Importer** must be 0.9.6 or newer (Eizport stops and asks to update it). A version newer than the one Eizport was tested with still imports, with a notice on the importer's screen, on the bundle plugin's and in WP-CLI.
+
+### Behind the scenes
+
+Before the importer reads anything:
+
+1. **The bundle is unpacked** into a private folder under `wp-content/uploads/eizport/tmp/<random>/`. Only the files its manifest lists are written, only under that folder, and only with file types WordPress allows to be uploaded (never PHP).
+2. **The WXR replaces the upload**, so the importer's own checks and steps run as usual.
+3. **Content files go back in:** each `post_content/<slug>.html` is put back into its item, by original ID, else by slug.
+4. **Media is served from the bundle:** when the importer downloads an attachment, a `pre_http_request` filter answers with the file from the folder instead of the network.
+5. **Options are applied at the end** (`import_end`), with every post ID mapped to the imported post. Options pointing to items that weren't imported are left out.
+6. **Term images are mapped at the end:** term meta that hold an attachment ID (a product category's thumbnail), listed in the manifest's `term_media`, point to the imported attachment.
+
+The folder is deleted when the import ends or is abandoned.
+
+### From a copy on the site
+
+Copies made by the Export screen are listed in the plugin's **Settings → Copies** (from its row in Plugins). Each one has an **Import** action, which imports it into the same site — handy to restore content or to test a bundle.
+
+### With code
+
+- The [`eizport/import`](https://eizport.github.io/docs/developers/abilities/#eizportimport) ability imports a `copy` or an `attachment_id` (a `.wxrz`, `.zip` or `.xml` in the media library).
+- [`wp eizport import <file>`](https://eizport.github.io/docs/developers/wp-cli/) does it from the command line — also from a bundle folder written by `wp eizport export --dir`, and with `--update-existing`.
+
+### What is mapped
+
+| In the file | On import |
+| --- | --- |
+| Attachment URLs | Files come from the bundle; the importer creates the attachments and image sizes as usual. An attachment the site already has is reused, with or without *Update existing*: its URLs (and its image sizes') in the imported content point to the file here |
+| `post_content/<slug>.html` | Put back into the item's content |
+| `options.json` | Set at the end; options listed in `post_ids` get the imported post's ID |
+| An edited image's original (`_wp_attachment_edit_root_id`) | Points to the imported original when both come in the bundle; otherwise left out, as the WordPress Importer 0.9.7 does |
+| `term_media` in the manifest | Term meta holding an attachment ID get the imported attachment's ID |
+| Post IDs in blocks | Image, Gallery, Cover, Media & Text, File, Video and Audio blocks (`"id"`, `"ids"`, `"mediaId"`, `wp-image-N`, gallery `data-id`), `[gallery ids]` and navigation links to pages and posts point to the imported items, in new and updated items and in block widgets. Plugins add their blocks with `eizport_block_id_attributes` |
+| The look ([appearance](https://eizport.github.io/docs/exporting/appearance/)) | CSS rules added to this site's CSS as the bundle asks (end or start; head/tail comments), or — chosen on import — replacing a head/tail block of the same name or all the CSS — step 1 of the importer, `css_mode`/`css_markers` and `--css-mode`/`--[no-]css-markers` change it; theme mods, style groups and widgets join this site's |
+| Terms | The items' categories, tags and other terms come in full (description, parent, term meta) and are created parents first; a term the site already has (same slug) is used as it is |
+| Links to the source site | The source site's address (the WXR's `base_site_url`) becomes this site's in the imported items' content and excerpt (also escaped in block attributes, http or https), in the menus' custom links, and in widgets and theme mods |
+| Products and their variations, pages and their children | Imported with their parents, as the WordPress Importer does |
+
+
+---
+
+## Multisite
+
+> Eizport on a WordPress network: network or per-site activation, who can do what, where each site's files go, WP-CLI with --url, and uninstalling.
+
+Source: https://eizport.github.io/docs/getting-started/multisite/
+
+Eizport works on each site of a network as on a single site: a site exports its own content and imports into itself, whatever the other sites hold.
+
+### Activating
+
+**Network Activate** it in *Network Admin → Plugins* to have it on every site, or activate it on the sites that need it. Nothing is shared between sites: each keeps its own settings, copies and saved defaults.
+
+### Who can do what
+
+| Who | Can |
+| --- | --- |
+| Site administrators | Export and import on their site, and change its Eizport settings. A [Playground .zip](https://eizport.github.io/docs/formats/playground-zip/) takes only the plugins active on their site and the themes it may use — no must-use plugins: the network's code is the super admins'. On import, the bundle's options outside the [groups](https://eizport.github.io/docs/exporting/options/#options-outside-the-groups-on-import) and the custom CSS aren't set |
+| Super admins | All of that on every site, and install plugins — an [as plugin](https://eizport.github.io/docs/exporting/as-plugin/) `.zip` needs one to install it; site administrators import the bundle inside it on Tools → Import instead |
+| Users who can't post unfiltered HTML | Import as WordPress lets them: on a network only super admins can, so scripts and some embeds in imported content — templates, template parts and widgets too — are filtered for the others, as they would be when typed in the editor |
+
+### Each site's files
+
+A site's media, copies (`uploads/eizport/`) and imported files live in its own uploads folder (`wp-content/uploads/sites/<id>/`). An export from one site and an import into another — subsite to subsite, a subsite to a single site, or the reverse — work as between two separate sites:
+
+- the media come from the bundle into the importing site's folder;
+- links to the exporting site (its own address, like `https://example.com/shop`) point to the importing one;
+- the IDs in blocks, menus and settings point to the imported items.
+
+### Saved defaults
+
+*Save as default* keeps each user's choices **per site**: what someone saves on one site doesn't show on another. With *Defaults are saved for: The whole site* in the [general settings](https://eizport.github.io/docs/settings/general/), a site has its own defaults for everyone on it.
+
+### WP-CLI
+
+Pick the site with `--url`:
+
+```bash
+wp --url=https://example.com/shop eizport export --types=product --filename=shop
+wp --url=https://example.com/staging eizport import shop.wxrz
+```
+
+### Uninstalling
+
+Deleting the plugin from *Network Admin → Plugins* removes its data from every site of the network: each site's `uploads/eizport/` folder, settings, saved defaults and scheduled cleanup.
+
+
+---
+
+## Header menus to staging
+
+> A site built locally — pages, a header menu with submenus and its theme location — repeated on staging without rebuilding the menu by hand.
+
+Source: https://eizport.github.io/docs/use-cases/header-menus-to-staging/
+
+### The scenario
+
+A site is built locally from a design: the pages, then the header menu — *Home*, *About*, *Services* with three pages under it, *Contact* and a link to the shop — set in the theme's *Primary* location. Staging needs the same pages and the same menu, and nobody wants to rebuild the menu by hand, item by item, after every round of changes.
+
+### The steps
+
+1. On the local site, **Tools → Export**. Check **Pages** — or only the ones the menu links to.
+2. The **Menus** row says *1 suggested*: the menu in the *Primary* location. Check it. Opening its panel shows it as a *Classic menu* in *Primary*.
+3. If a page of the menu wasn't chosen, the **Pages** row suggests it: check the row to bring it.
+4. **Export**, and on staging **Tools → Import → WordPress** with the file (Eizport active there too, for the menu's location).
+
+The same works for a block theme's header: the **Menus** row suggests the *Navigation* the header uses.
+
+### What the file carries
+
+- The pages, with their media.
+- The menu, with its items in order, the submenu under *Services*, the custom link to the shop, and its place in *Primary*.
+
+On staging, the menu items point to staging's pages (their new IDs) and the menu is in *Primary*.
+
+### What it doesn't
+
+- A page the menu links to that wasn't exported: its item is left out.
+- The location, when staging's theme doesn't have *Primary* (another theme, or a block theme).
+
+### Next time
+
+After more changes, export again and import with *Update the items that already exist (same type and slug)* checked (see [updating items that already exist](https://eizport.github.io/docs/getting-started/importing/#updating-items-that-already-exist)): the pages are updated, and the menu takes the file's items instead of getting a second copy of them.
+
+
+---
+
+## Theme look to staging
+
+> A change to a theme's look made locally — the last CSS rule, the logo, one widget, or a block theme's palette — taken to staging without touching what staging has of its own.
+
+Source: https://eizport.github.io/docs/use-cases/theme-look-to-staging/
+
+### The scenario
+
+Staging already has its look: its own Additional CSS, its widgets, its colors. Locally, a last CSS rule was added for the footer, the logo changed, and an *Hours* widget went into the footer. Only those should reach staging — copying the whole look over would wipe what staging has of its own, and redoing it by hand is where something gets forgotten.
+
+The same goes for a block theme customized in the Site Editor: a new color palette, one more rule in its Additional CSS.
+
+### The steps
+
+1. On the local site, **Tools → Export**. Open **Choose items** on **Customizer custom CSS** and check only the last rule (*Rule 3 of 3 (the last)*), each with its preview; on **Customizer theme mods**, the Logo; on **Widgets**, *Hours*. With a block theme: the *Color palette* group of **Editor global styles** and a rule of **Editor global CSS**.
+2. **Details → CSS rules on import**: *Add at the end of the site's CSS* (the default).
+3. **Export**, and on staging **Tools → Import → WordPress** with the file (with Eizport active there). Step 1 shows **Additional CSS**, as the file asks; change it there if needed.
+
+### What staging gets
+
+- Its own CSS, then the rule, between `/* head … */` and `/* tail … */` comments named after the file.
+- The logo (the image is imported with it); its other theme mods as they were.
+- *Hours* at the end of its footer, after its own widgets.
+- With a block theme: the palette; its own colors and typography as they were.
+
+### Next time
+
+Name the exports after the task — `COMB-584.wxrz` — and the rules on staging sit between `/* head COMB-584 */` and `/* tail COMB-584 */`. Another change for the same task, another export with the same name — with **Details → CSS rules on import: Replace the block of the same name**: the importer's step 1 comes with **Replace the "COMB-584" block this site already has** chosen, which swaps the old rules for the new ones and leaves the rest of staging's CSS as it is. With *Add at the end* instead, a second block is added after the first (the importer offers the replacement too). With *Update existing* on, the *Hours* widget is updated in place instead of added again.
+
+### What it doesn't
+
+- Fonts installed with the Font Library.
+- A sidebar staging's theme doesn't have: its widgets go to *Inactive widgets*.
+
+
+---
+
+## Site header to staging
+
+> A block theme's header redone in the Site Editor locally — a new layout, its navigation, an image — and a page template, taken to staging in place of the ones staging has, without a Header 2.
+
+Source: https://eizport.github.io/docs/use-cases/site-header-to-staging/
+
+### The scenario
+
+The site uses a block theme. Locally, the header was redone in **Appearance → Editor**: the logo on the left, a new navigation, a banner image above it; and the **Pages** template got a line of its own above the content. Staging has its own header, edited there months ago.
+
+Copying the block markup by hand loses the navigation (its `ref` is an ID of the local site) and the image (another ID), and the WordPress Importer alone adds the header again as *Header 2* next to staging's own, which keeps showing.
+
+### The steps
+
+1. On the local site, **Tools → Export**. Check **Editor template parts** — or open **Choose items** and check only **Header**, each part with its block markup as preview — and **Editor templates** (**Pages**).
+2. Check **Menus** too, with the header's navigation: it's suggested, as the templates point to it.
+3. **Export**, and on staging **Tools → Import → WordPress** with the file (with Eizport active there).
+
+### What staging gets
+
+- Its **Header** replaced by the local one, under the same slug — no *Header 2* — and the **Pages** template replaced (or added, when staging hadn't edited it).
+- The header's navigation block pointing to the imported navigation, its image block to the imported image, and its links to the local site pointing to staging.
+- Everything else of staging's look as it was: its other templates and parts, its styles, its CSS.
+
+### What it doesn't
+
+- Templates the theme's files hold and nobody edited: staging's theme has them already.
+- Another theme's templates: only the active theme's are listed, and they go to the same theme on staging. With another theme active there, they wait until that theme is.
+
+
+---
+
+## Galleries to staging
+
+> Pages built with Image, Gallery and Cover blocks, moved to a site where the media get other IDs — and still editable as they were.
+
+Source: https://eizport.github.io/docs/use-cases/galleries-to-staging/
+
+### The scenario
+
+The local site's pages use Image, Gallery, Cover and Media & Text blocks. Staging already has content, so the imported images get other IDs there. With the WordPress Importer alone, the images still show (their addresses are updated), but the blocks keep the old IDs: the editor shows *This image has an empty or invalid source*, *Replace* and the image settings act on the wrong item, and a gallery can't find its images.
+
+### The steps
+
+1. On the local site, **Tools → Export**: check the pages. Their images come along (*media used in content*).
+2. **Export**, and on staging **Tools → Import → WordPress** with the file.
+
+### What the import does
+
+When the import ends, every imported page — new or updated — has its blocks pointed to the imported media: the Image and Cover blocks' `id` and `wp-image-N` class, the Gallery's `ids` and its images' `data-id`, Media & Text's `mediaId`, File, Video and Audio, `[gallery ids="…"]`, and the navigation links to pages and posts. The same goes for block widgets.
+
+Only IDs that came in the file and changed are touched: a block pointing to something staging already had, and that wasn't in the file, stays as it is.
+
+### What it doesn't
+
+- A plugin's own blocks, until it lists them (the [`eizport_block_id_attributes`](https://eizport.github.io/docs/developers/hooks/#eizport_block_id_attributes) filter).
+
+
+---
+
+## Internal links to staging
+
+> Pages that link to each other, to products and to categories, built locally and moved to staging — with every link pointing to staging, not back to the local site.
+
+Source: https://eizport.github.io/docs/use-cases/internal-links-to-staging/
+
+### The scenario
+
+The local site's home links to the shop, to three product categories, to the *About* page and to a few products — in buttons, in navigation links, in the text. With the WordPress Importer alone, staging gets those links as they were: `http://localhost:8909/product/…`, so every click on staging leads back to a site only one computer can open. The fix used to be a `search-replace` after each import.
+
+### The steps
+
+1. On the local site, **Tools → Export**: check the pages and products (and the menus, the widgets…).
+2. **Export**, and on staging **Tools → Import → WordPress** with the file.
+
+### What the import does
+
+When the import ends, the local site's address becomes staging's in what was imported:
+
+- the content and excerpt of every imported item, new or updated — links in the text, buttons, navigation links (also inside block attributes, where the address is escaped as `http:\/\/…`), with http or https;
+- the custom links of the imported classic menus;
+- the widgets and theme mods that came in the file.
+
+The address is replaced only where it ends: `old.example` never touches `old.example.org`.
+
+### What it doesn't
+
+- Content that wasn't in the file: staging's own pages keep their links.
+- Templates and template parts aren't exported yet, so links in a block theme's header or footer stay as they were.
+
+
+---
+
+## Product categories to staging
+
+> A store's products moved with their categories as they are — descriptions, parent categories and thumbnails — not just their names.
+
+Source: https://eizport.github.io/docs/use-cases/product-categories-to-staging/
+
+### The scenario
+
+The local store has its products in categories with descriptions (shown on the category pages), some under a parent (*Coffee → Single origin*), and with thumbnails. Only the products are exported, not *All content*. With WordPress's own export, each product names its categories and nothing else: staging gets categories with the right names and no description, no parent, no thumbnail.
+
+### The steps
+
+1. On the local site, **Tools → Export**: check **Products** (all of them, or some).
+2. **Export**, and on staging **Tools → Import → WordPress** with the file.
+
+### What the file carries
+
+Every category, tag and other term the exported items use, in full, with its parent categories even when no product is in them:
+
+- the name, the slug and the **description**;
+- the **parent**, so the hierarchy is rebuilt (parents are written first);
+- the **term meta**: WooCommerce's thumbnail and display type, or a plugin's own fields.
+
+On staging, the categories come as they were, and the thumbnails point to the imported images.
+
+### What it doesn't
+
+- A category staging already has (same slug) is used as it is: its description isn't overwritten.
+- Terms no exported item uses stay out — export *All content* to bring every term.
+
+
+---
+
+## Second delivery to staging
+
+> Delivering new pages to a staging site that already has the media from the first delivery — without duplicating the images and without links to the local site.
+
+Source: https://eizport.github.io/docs/use-cases/second-delivery-to-staging/
+
+### The scenario
+
+The first delivery to staging brought the pages and their images. A week later there are two new pages that reuse some of those images, plus one new image. The second export carries them all; staging already has most of the images.
+
+### The steps
+
+1. On the local site, **Tools → Export**: check the two new pages (their images come along).
+2. **Export**, and on staging **Tools → Import → WordPress** with the file — *Update existing* on or off.
+
+### What the import does
+
+- The images staging already has (same title and date as in the file) are **reused**, not imported again.
+- Their addresses in the new pages — the full size and every image size (`photo-300x200.jpg`) — point to the files on staging, not to the local site. Before, this only happened with *Update existing* on.
+- The new image is imported, and the blocks point to it ([galleries to staging](https://eizport.github.io/docs/use-cases/galleries-to-staging/)).
+
+### What it doesn't
+
+- An image whose file changed locally keeps staging's old file: turn on *Update existing* to update pages, and replace the image in the media library.
+
+
+---
+
+## Subsite to subsite
+
+> On a network, a site built in one subsite moved to another — the live one, or a fresh copy — with its media, links and settings pointing to the right site.
+
+Source: https://eizport.github.io/docs/use-cases/subsite-to-subsite/
+
+### The scenario
+
+A network has a subsite for building (`example.com/build`) and the live one (`example.com/shop`). The new pages, products and menus are ready in *build*; *shop* needs them. Copying the database tables between subsites is risky (IDs, prefixes, users shared by the network), and WordPress's own export leaves links and images pointing to *build*.
+
+### The steps
+
+1. In *build*, **Tools → Export**: check what goes (pages, products, menus, the look…).
+2. **Export**, and in *shop* **Tools → Import → WordPress** with the file. Or from WP-CLI:
+
+   ```bash
+   wp --url=https://example.com/build eizport export --types=page,product --menus=all --filename=release
+   wp --url=https://example.com/shop eizport import release.wxrz --update-existing
+   ```
+
+### What the import does
+
+- The media go to *shop*'s own folder (`uploads/sites/<id>/`).
+- Links to `example.com/build/…` point to `example.com/shop/…`; the network's address and *shop*'s own uploads are never touched.
+- The IDs in blocks, menus and settings point to the items imported into *shop*.
+- *build*'s saved defaults and settings stay in *build*.
+
+### What it doesn't
+
+- Users: they belong to the network; the importer assigns the posts to an existing user (or creates one) as WordPress does.
+- Network settings (*Network Admin → Settings*) aren't exported: they belong to the whole network.
+
+
+---
+
+## Client demo in Playground
+
+> A new page shown to a client in WordPress Playground: one link that opens right on that page, with the site's plugins as they are.
+
+Source: https://eizport.github.io/docs/use-cases/client-demo-in-playground/
+
+### The scenario
+
+A new landing page is ready locally and the client wants to see it before it goes to staging. Sending a link to a local site doesn't work, and a Playground that opens on the dashboard, with every plugin switched on (including the ones the site keeps off), isn't what the client should see.
+
+### The steps
+
+1. On the local site, **Tools → Export**: check the page (and what it needs: menus, the look…).
+2. **Details → Format: Playground**, then **Playground options**:
+   - **Landing page → A page**: the new landing page;
+   - **Themes and plugins**: the site's theme and the plugins the page uses.
+3. **Export**, then **Open in Playground** on the copy in the plugin's [Copies](https://eizport.github.io/docs/settings/copies/): that's the link to send, on playground.wordpress.net.
+
+### What the client sees
+
+Playground builds the site in the browser and opens **on the landing page** — the page goes in the blueprint as `/?pagename=<its path>`, so it's found whatever ID it gets there. The plugins are on or off as they are locally: a plugin the site keeps inactive is installed but stays off.
+
+### What it doesn't
+
+- The link opens a throwaway site: what the client changes there is lost when the tab closes.
+- Premium plugins go inside the file: share it only where their licenses allow.
+
+
+---
+
+## Playground in your language
+
+> A demo of an English site shown in Portuguese in WordPress Playground: the dashboard, the theme and the plugins translated, from one link.
+
+Source: https://eizport.github.io/docs/use-cases/playground-in-your-language/
+
+### The scenario
+
+The site is built in English, but the client is Brazilian and wants to see the new page and its admin in Portuguese. A Playground link opens in English, and switching the language there means downloading translations by hand on a throwaway site.
+
+### The steps
+
+1. In **Users → Profile**, your language is *Português do Brasil* (the site's stays English).
+2. **Tools → Export**: check the page and what it needs.
+3. **Details → Format: Playground**, then **Playground options**:
+   - **Language → Your language (Português do Brasil)**;
+   - **Themes and plugins**: the site's theme and the plugins the page uses.
+4. **Export**, then **Open in Playground** on the copy in [Copies](https://eizport.github.io/docs/settings/copies/).
+
+### What the client sees
+
+Playground installs the themes and plugins, then sets the site's language to Portuguese and fetches the translations of WordPress and of everything from the WordPress.org directory. A custom plugin's translations come from this site, inside the file. The dashboard, the theme's texts and the plugins' screens open in Portuguese.
+
+### What it doesn't
+
+- Only languages installed on this site are offered (Settings → General or your profile installs them).
+- A theme or plugin without a translation stays in English.
+
+
+---
+
+## Custom post types in Playground
+
+> A site whose post types live in a must-use plugin, shown in WordPress Playground: the plugin goes in the .zip and runs before the import.
+
+Source: https://eizport.github.io/docs/use-cases/custom-post-types-in-playground/
+
+### The scenario
+
+The site keeps its **Recipes** post type in a must-use plugin — `wp-content/mu-plugins/recipes.php`, which loads `recipes/register.php` — so no one can switch it off. A Playground demo with the recipes needs that plugin: without it, there's no Recipes post type to import into.
+
+### The steps
+
+1. **Tools → Export**: check **Recipes** (and what the recipes need).
+2. **Details → Format: Playground**, then **Playground options → Themes and plugins**:
+   - **Must-use plugins to install**: the recipes plugin;
+   - the site's theme, and the plugins the recipes use.
+3. **Export**, then **Open in Playground** on the copy in [Copies](https://eizport.github.io/docs/settings/copies/).
+
+### What happens
+
+The `.zip` holds `mu-plugins/recipes.php` and `mu-plugins/recipes.zip` (the folder it loads). The blueprint writes them into Playground's `wp-content/mu-plugins/` **before the import**, so the Recipes post type exists when the recipes come in, and the menu shows **Recipes** with them.
+
+### What it doesn't
+
+- A host's own must-use plugins (and WordPress Studio's SQLite loader) aren't offered: Playground has its own.
+- A must-use plugin that loads files from elsewhere (a path outside `mu-plugins/`) takes only what's in `mu-plugins/`.
+- Custom code goes inside the file: share it only where its license allows.
+
+
+---
+
+## Advanced Custom Fields to staging
+
+> Recipes built with Advanced Custom Fields (ACF) — their post type, taxonomy, field group and values — taken to staging with every photo, page and term they point to pointing right.
+
+Source: https://eizport.github.io/docs/use-cases/advanced-custom-fields-to-staging/
+
+### The scenario
+
+A food site keeps its **Recipes** with Advanced Custom Fields (ACF): a *Recipes* post type and a *Cuisines* taxonomy made in *ACF → Post Types* and *Taxonomies*, and a *Recipe details* field group with a photo, a printable card, the chef's page, related pages, a cuisine and the cook. A new recipe is ready locally; staging has its own content, so every ID there is different.
+
+### The steps
+
+1. On the local site, **Tools → Export**: check **Recipes** (or open **Choose items** for the new one).
+2. The rows suggest the rest: **Pages** shows *2 suggested* (the chef's page and the related one) and **Advanced Custom Fields (ACF)** shows *3 suggested* (the post type, the taxonomy and the field group). Check both rows.
+3. **Export** (a `.wxrz` or `.zip` bundle), and import it on staging in **Tools → Import → WordPress**.
+
+### What staging gets
+
+- ACF imports the *Recipes* post type, the *Cuisines* taxonomy and the *Recipe details* group **before** the content: the recipe comes in as a recipe, with its cuisine.
+- The photo and the card come with the bundle, even unattached; on staging they keep their place — or point to the same files staging already had.
+- The chef's page, the related pages, the cuisine and the cook point to the items **there**, with staging's IDs; the group's location rule on a page too.
+- A second delivery updates the group, the post type and the taxonomy (same keys) instead of adding copies.
+
+### What it doesn't
+
+- ACF PRO fields (repeater, flexible content, gallery) aren't covered yet.
+- A cook who isn't an author in the file keeps the old user ID; authors are mapped as the importer maps them.
+
+
+---
+
+## Elementor to staging
+
+> A landing page built with Elementor — its images, a saved section template and the site's global colors and fonts — taken to staging with Elementor's own importer, everything pointing to staging's items.
+
+Source: https://eizport.github.io/docs/use-cases/elementor-to-staging/
+
+### The scenario
+
+A landing page is built with Elementor locally: a background image, a gallery, a **promo section saved as a template** and shown by a template widget, a button to the chef's page, and the brand color and font from *Elementor → Site Settings*. Staging already has its own content, so every ID there is different, and its own Kit.
+
+### The steps
+
+1. On the local site, **Tools → Export**: in **Pages**, **Choose items** → the landing page.
+2. The **Elementor** row shows *2 suggested*: the site settings and the promo section. Check it.
+3. **Export**: the page's design goes as `post_content/<slug>.json`, the template and the site settings in the bundle, with the images.
+4. On staging, **Tools → Import → WordPress**: upload the bundle.
+
+### What staging gets
+
+- The page, with its design brought in by **Elementor's own import**: the background and the gallery show the images the bundle brought (no copies of them), the template widget shows the imported promo section, and the button goes to staging's chef page.
+- The **promo section** in *Templates → Saved Templates*.
+- A **Kit** with the brand color and font added to staging's, active — the heading shows the brand color.
+- A second delivery updates the template and that Kit instead of adding copies.
+
+### What it doesn't
+
+- Elementor Pro's Theme Builder (headers, footers and their conditions) and popups aren't covered yet.
+
+
+---
+
+## Export screen
+
+> The new Tools → Export screen, part by part: the header actions, the Details panel, the list and the side panels.
+
+Source: https://eizport.github.io/docs/exporting/export-screen/
+
+Tools → Export opens a screen built like WordPress's newest admin screens (DataViews and DataForm, on core's admin screen framework). It runs the plugin's [abilities](https://eizport.github.io/docs/developers/abilities/), so the screen, REST and AI agents export the same way.
+
+*Screenshot: The Export screen with Pages (1 item), and Products and Options bringing what the homepage suggests.*
+
+### The list
+
+One row per thing that can be exported:
+
+- **Content types** — Posts, Pages, Products, Orders, Coupons, Forms and any custom post type with an admin screen. Children travel with their parents (a product's variations).
+- **Attachments** — media items, chosen directly.
+- **Product reviews** — WooCommerce's approved reviews, right after Products ([choosing items](https://eizport.github.io/docs/exporting/choosing-items/#suggestions)). Products go without their reviews unless this row is checked.
+- **Options** — site settings ([more](https://eizport.github.io/docs/exporting/options/)).
+
+The **Export** column says what goes: *Not included*, *All*, *3 items*, or for Options *Basics + 2 items*; an unchecked Options row shows *2 suggested* (the homepage: `page_on_front` and `show_on_front`) when the items chosen have [linked settings](https://eizport.github.io/docs/exporting/options/#linked-settings). **Nothing checked exports all content**, as WordPress does.
+
+Each row's actions: **Choose items** (opens the side panel; always shown, not only on hover; **Close items** on the row whose panel is open), **Export all of it** (where it doesn't export all yet; for Options, every option) and **Leave out** (rows included). Check several rows to act on them at once.
+
+### The side panel
+
+Clicking a row opens its items in a panel on the right ([choosing items](https://eizport.github.io/docs/exporting/choosing-items/)): what you check there joins the export at once, and **Close** goes back. The panel's URL is shareable: `…&p=/export?type=page`.
+
+### The Details panel
+
+Above the list, a **Details** line sums up the file — like *WXRZ · default filename · media files · as plugin* (*custom filename* once you type one). Click it to open its settings (it always starts closed):
+
+| Field | What it does |
+| --- | --- |
+| **Format** | *WXR XML* (WordPress's plain file), *WXRZ* or *WXR ZIP* (a bundle, as soon as media files or settings go with it) or *Playground* ([formats](https://eizport.github.io/docs/exporting/file-and-formats/)) |
+| **File name** | Empty: WordPress's usual `<site>.WordPress.<date>`, shown as the placeholder |
+| **Media files** | Put the exported attachments' files inside the bundle; its ⓘ explains it |
+| **As plugin** | Make the bundle a plugin that imports itself ([as plugin](https://eizport.github.io/docs/exporting/as-plugin/)); its ⓘ explains it. Off and disabled with Playground |
+| **Update existing** | The import updates the items of the chosen content types that already exist (same type and slug) instead of adding copies, named in its ⓘ (all with nothing checked); disabled when only rows without content are checked ([more](https://eizport.github.io/docs/getting-started/importing/#updating-items-that-already-exist)); its ⓘ explains it. Off and disabled with Playground, which starts from a new site |
+| **Playground options** | Where the Playground .zip opens and the themes and plugins it installs (enabled with the Playground format); a count on the button says how many are set ([Playground .zip](https://eizport.github.io/docs/formats/playground-zip/#playground-options)) |
+
+### Header actions
+
+- **Reset to defaults** — goes back to the saved defaults (or to nothing chosen, without them). Dimmed when the choices already are those.
+- **Clear defaults** — forgets the saved defaults; active only while **Reset to defaults** is dimmed.
+- **Save as default** — keeps the current choices to start with next time ([saved defaults](https://eizport.github.io/docs/exporting/saved-defaults/)).
+- **Export** — writes the file as a [copy](https://eizport.github.io/docs/settings/copies/) and offers the download.
+
+### On a phone
+
+The list shows only the title column, with what is exported under it; the Details panel stacks; the side panel takes the screen.
+
+
+---
+
+## Choosing items
+
+> Items per content type, chosen in the side panel at once; suggestions; the Selection filter; children, attachments, reviews and roles.
+
+Source: https://eizport.github.io/docs/exporting/choosing-items/
+
+Each content type is exported whole (its row checked in the list) or **by items**, chosen in its side panel.
+
+*Screenshot: The Pages panel: a checkbox per page, roles as badges.*
+
+### Choosing
+
+Check an item, or click it, and it joins the export at once: the list behind the panel shows **1 item**, **3 items**… Uncheck the last one and the type is left out again. The choice survives search and paging: check some on page 1, search, check more. **Close** goes back to the list. The Options panel works the same way.
+
+### Suggestions
+
+What you choose can suggest more, shown as **N suggested** in the other rows — counted, not named, and not exported until that row is checked:
+
+| Choosing | Suggests |
+| --- | --- |
+| A page a setting points to (homepage, posts page, shop…) | Those settings, in **Options** ([linked settings](https://eizport.github.io/docs/exporting/options/#linked-settings)) |
+| A page whose blocks show products (*Hand-picked Products*, *Product Collection* with hand-picked products, *Single Product*, *Featured Product*, `[products ids="…"]`) | Those products, in **Products** |
+| Products with reviews | Their approved reviews, in **Product reviews** |
+| Anything | The classic menus in the theme's locations and the navigations the items or the theme's templates use, in **Menus** ([menus](https://eizport.github.io/docs/exporting/menus/)) |
+| A menu | The pages, posts and products it links to, in their rows |
+
+Checking a row with suggestions brings them, and it still says *2 suggested* — with what else you chose: *2 suggested + Basics + 1 item*. Unchecking one of them in the row's panel turns the rest into plain items. **Export all of it** takes the whole type instead. Plugins add their own suggestions with [`eizport_suggested_items`](https://eizport.github.io/docs/developers/hooks/#eizport_suggested_items).
+
+### Finding items
+
+- **Selection** — *All*, *Selected* or *Suggested*. A panel opens on *Selected* when its row has items chosen, else on *Suggested* when there are suggestions.
+- **Status** and each **taxonomy** (product categories, tags…) narrow the list to find items; they don't export anything by themselves.
+
+Exporting by filters (status, author, dates, terms) stays on the [classic screen](https://eizport.github.io/docs/exporting/classic-screen/) and in the [`eizport/export`](https://eizport.github.io/docs/developers/abilities/) ability.
+
+### What comes along
+
+| With | Comes along |
+| --- | --- |
+| Any item | Its attached media and featured image (WordPress does this) |
+| Any item | Media used in its content without being attached ([media](https://eizport.github.io/docs/exporting/media/)) |
+| Any item | Its categories, tags and other terms in full — description, parent categories and term meta (a product category's thumbnail and display type) — not only their names |
+| A product | Its variations. Its reviews only with the **Product reviews** row (they are suggested) — on the classic screen and in the ability without `reviews`, all of them |
+| A page | Its child pages only if they are chosen too |
+| An item with a role | The settings that point to it, suggested in the Options row ([linked settings](https://eizport.github.io/docs/exporting/options/#linked-settings)) |
+
+### Roles
+
+Items that a setting points to show a badge: **Homepage**, **Posts page**, **Privacy policy page**, **Site icon**, and the pages plugins register, like WooCommerce's **Shop page**, **Cart page**, **Checkout page**, **My account page** and **Terms and conditions page**. Plugins add their own through [`eizport_linked_options`](https://eizport.github.io/docs/developers/hooks/#eizport_linked_options).
+
+### Limits
+
+The classic screen lists the latest 1,000 items per type (filter [`eizport_selection_limit`](https://eizport.github.io/docs/developers/hooks/#eizport_selection_limit)); the new screen pages through all of them.
+
+
+---
+
+## Options
+
+> Export site settings one by one, by group or all at once; linked settings; what is never exported; how IDs are mapped.
+
+Source: https://eizport.github.io/docs/exporting/options/
+
+The **Options** row exports site settings in an `options.json` inside the bundle, set on the other site when the import ends.
+
+*Screenshot: The Options panel on Selected: the settings the homepage brings.*
+
+### Three ways to choose
+
+- **One by one** — every option the site has (search, pages), each with its size and an *IDs mapped on import* badge when it holds a post ID.
+- **By group** — filter the panel by a group and export it: **Basics** (suggested), Reading, General, Permalinks, Discussion, Media, Privacy, Site logo and site icon, WooCommerce pages. The theme's Customizer settings, custom CSS, the Site Editor's styles and the widgets have [rows of their own](https://eizport.github.io/docs/exporting/appearance/). A group is resolved when the file is made, so it follows the active theme.
+- **All** — every option that may be exported.
+
+On the new screen, checking an option in the panel adds it at once (the *Selection* filter shows the ones chosen); groups and *all* come from saved defaults or the classic screen. With nothing chosen yet, the panel opens on **Basics**: title, tagline, language, time zone, date formats, homepage and posts page, posts per page, permalinks, site logo and site icon.
+
+### Linked settings
+
+Some options point to a post: `page_on_front`, `page_for_posts`, `wp_page_for_privacy_policy`, `site_icon`, WooCommerce's page IDs. When the post is exported, those options can come along — with the ones they need, like `show_on_front`.
+
+On the new screen they are **suggested**: choose the homepage and the unchecked Options row shows **2 suggested** (`page_on_front` and `show_on_front`, counted, not named). Check the row and they go with the export; the row still says **2 suggested** (plus groups or *N items* you chose). Uncheck one of them in its panel and the rest become plain items — **1 item**. Leave the row unchecked and they don't go.
+
+The setting decides when they are suggested or added:
+
+| Mode (Settings → Export) | When |
+| --- | --- |
+| **When items are checked, and on export** (default) | Suggested in the Options row when you check an item with a role; on the classic screen and in the ability, also added when the file is made — for items exported by filters or with all content |
+| **When items are checked** | Suggested from the side panel's selection |
+| **On export** | Only when the file is made (classic screen, ability) |
+| **Never** | You choose every option yourself |
+
+### Never exported
+
+Site URLs (`siteurl`, `home`), the admin email, keys and salts, `active_plugins`, roles (`<prefix>user_roles`), who may register and as what (`users_can_register`, `default_role`), `cron`, `rewrite_rules`, database versions, mail server credentials, the plugin's own settings, and every transient. Plugins add theirs with [`eizport_denied_options`](https://eizport.github.io/docs/developers/hooks/#eizport_denied_options); WordPress's own can't be removed.
+
+**Secrets** aren't exported nor listed either: an option, a theme mod or a widget field whose name says it holds one — `secret`, `password`, `token`, `api_key`, `license`, `private`, `credential`… — and plugins' known stores of them (WP Mail SMTP, payment gateways' settings). A plugin marks its own, or lets one through, with [`eizport_is_secret`](https://eizport.github.io/docs/developers/hooks/#eizport_is_secret).
+
+An import never sets WordPress's own either, whatever the bundle holds: a bundle is a file anyone could have written.
+
+### Options outside the groups, on import
+
+An import sets the options of the groups (with the ones plugins add), the options pointing to a post, the theme mods and the widgets. Any other option the bundle holds — exported **by name** — waits for whoever imports: step 1 of the importer lists them under **Other options**, unchecked, and only the ones checked are set (on a [bundle plugin](https://eizport.github.io/docs/exporting/as-plugin/)'s screen too). With [WP-CLI](https://eizport.github.io/docs/developers/wp-cli/) and the [`eizport/import`](https://eizport.github.io/docs/developers/abilities/#eizportimport) ability, only the ones named in `--options` / `options`. On a network, only for who may manage the network's options.
+
+### IDs on import
+
+`options.json` lists, under `post_ids`, the options that hold a post ID. On import each one gets the ID the importer gave that post; if the post wasn't imported, the option is left out rather than pointing to the wrong thing. `theme_mods_<theme>` values are mapped too (logo, menus).
+
+
+---
+
+## Menus
+
+> Classic menus with their items and theme locations, and block navigations, on their own row; what's suggested, what the import does with menus the other site already has, and the limits.
+
+Source: https://eizport.github.io/docs/exporting/menus/
+
+Navigation menus are exported on their own row, **Menus**, next to the content types. Its side panel lists both kinds:
+
+| Kind | What it is | Goes with it |
+| --- | --- | --- |
+| **Classic menu** | *Appearance → Menus*, in classic themes | Its items (with their order and submenus) and the theme locations it sits in |
+| **Navigation** | The menu of a *Navigation* block, in block themes (*Appearance → Editor → Navigation*) | Its links |
+
+### Suggested
+
+Without choosing anything, the row suggests:
+
+- the classic menus that sit in a **theme location** (*Primary*, *Footer*…);
+- the **navigations** the items chosen use in their content, and the ones the active theme's templates and template parts use (a header's *Navigation* block). A *Navigation* block that points to no menu shows the most recently published one: that one is suggested.
+
+Choosing a classic menu suggests what its items link to — pages, posts, products — in their rows. Export them too: the importer leaves out a menu item whose page isn't on the other site. Custom links always go.
+
+### On the other site
+
+- **Classic menus** are created with their items, which point to the imported pages, posts and terms; submenus keep their parents. Each menu goes back to its **theme locations**, when the other site's active theme has them (a block theme has none). The locations need Eizport on the other site: with the WordPress Importer alone, the menus come without them.
+- **Navigations** are created, and the *Navigation* blocks that pointed to them — in the imported pages and in the other site's templates — point to the new ones.
+- **A menu the other site already has** (same slug) keeps its items, unless the import [updates the items that already exist](https://eizport.github.io/docs/getting-started/importing/#updating-items-that-already-exist): then its items are replaced by the file's, and it ends up as on this site. A navigation with the same slug is updated the same way.
+
+### From WP-CLI and the ability
+
+```bash
+wp eizport export --types=page --menus=classic:18,navigation:4
+wp eizport export --menus=all
+```
+
+The [`eizport/export`](https://eizport.github.io/docs/developers/abilities/#eizportexport) ability takes `menus` (`classic`, `navigation` or `all`); [`eizport/get-export-options`](https://eizport.github.io/docs/developers/abilities/#eizportget-export-options) lists them.
+
+### Limits
+
+- **All content** (no type chosen) already carries every menu, as WordPress's own export does; choosing menus there adds their theme locations.
+- With no type checked and menus chosen, only the menus are exported.
+- The classic screen (*Tools → Export → Classic*) has no Menus row.
+
+
+---
+
+## Appearance
+
+> The site's look on rows of its own, item by item: Customizer theme mods and CSS rules, the Site Editor's style groups, CSS rules, templates and template parts, and widgets — with a preview of each, the media they use, and how the other site takes them.
+
+Source: https://eizport.github.io/docs/exporting/appearance/
+
+The site's look is exported on rows of its own, next to the content types. A row shows only when the active theme has something in it, and its **Choose items** panel lists what it holds, each with a preview:
+
+| Row | Each item | Preview | Shows with |
+| --- | --- | --- | --- |
+| **Customizer theme mods** | A setting of *Appearance → Customize*: Logo, Header image, Background image and color, Header text color, the theme's own settings | The image, the color, or the value | A theme with Customizer settings |
+| **Customizer custom CSS** | A rule of *Customize → Additional CSS* (an `@media` block counts as one; a comment right before goes with it) | The rule, and which one it is: *Rule 3 of 3 (the last)* | A theme with Additional CSS |
+| **Editor global styles** | A group of *Appearance → Editor → Styles*: Color palette, Site colors, Typography, Spacing and layout, Elements, each block with styles of its own | Its colors, or a summary | Block themes with saved styles |
+| **Editor global CSS** | A rule of the Site Editor's *Additional CSS* | The rule | Block themes with Additional CSS there |
+| **Editor templates** | A template of the active theme edited in *Appearance → Editor → Templates* (Pages, Single Posts, a custom one) | Its block markup | Block themes with templates edited there |
+| **Editor template parts** | A template part of the active theme edited there: the Header, the Footer, a part of its own, with its area | Its block markup | Block themes with parts edited there |
+| **Widgets** | A widget — classic (text, image, menu…) or block — with its sidebar | Its text or image | Classic themes with widgets in their sidebars |
+
+Check a row to take all it has (every item is suggested), or open **Choose items** and check only some: the last CSS rule, the logo and the background color, one widget, the header. They need a bundle (`.wxrz`, `.zip` or a Playground `.zip`): they travel in its `options.json` — but templates and template parts, which are posts and travel in the WXR as content does (a plain `.xml` carries them too).
+
+Only what was edited in the Site Editor is listed: a template the theme's own files hold, untouched, the other site's theme has already.
+
+### What comes along
+
+The images the items chosen use are exported with them, even when the Attachments row isn't checked: the logo, the header and background images, the media of image widgets and block widgets, the images in templates and template parts, and the uploads the styles and the CSS point to (*Only attached media* in [Settings → Export](https://eizport.github.io/docs/settings/export-settings/) turns it off, as for content).
+
+### On the other site
+
+- **CSS rules** (the Customizer's and the Site Editor's) are **added** to the other site's CSS, as **Details → CSS rules on import** says: at the end (the default), at the start, replacing the block of the same name the other site already has (at the end when it has none), or replacing all its CSS. They go between two comments named after the file:
+
+  ```css
+  .their-own { color: purple; }
+
+  /* head COMB-584 */
+  .site-footer { background: #ffeedd; }
+  /* tail COMB-584 */
+  ```
+
+  The name is the file's name without extension — `COMB-584.wxrz` here, named after a task: a mark of where the rules came from. Each import adds its own block — blocks aren't unique, and the same name can show up more than once. Without the comments ([Settings → Export](https://eizport.github.io/docs/settings/export-settings/), or the importer), rules the other site already has (same text) aren't repeated.
+- Whoever imports starts from the export's choice and can change it on the importer's step 1 (**Additional CSS**), with `css_mode`/`css_markers` in [`eizport/import`](https://eizport.github.io/docs/developers/abilities/#eizportimport), or with `--css-mode`/`--[no-]css-markers` in [WP-CLI](https://eizport.github.io/docs/developers/wp-cli/). There:
+  - **Replace the "COMB-584" block this site already has** — offered only when the other site's CSS has a head/tail block of the same name (an earlier delivery of a file with that name): the new block takes its place, the rest of the CSS staying (`replace`);
+  - **Replace all of this site's CSS** — only the file's rules remain (`replace_all`).
+- **Theme mods** chosen go to the active theme and are **merged** into its own: what the file doesn't hold stays (the other settings, the menus' locations). The logo and the header image point to the imported attachments, the header and background images' addresses to the imported files.
+- **Style groups** chosen replace the same groups on the other site's styles (a block theme); its other groups stay.
+- **Templates and template parts** chosen **replace** the same template of the same theme on the other site (same slug: the Header replaces its Header, not a *Header 2* next to it), whatever **Update existing** says; one it doesn't have is added. Their navigation blocks point to the imported navigations (export them on the [Menus](https://eizport.github.io/docs/exporting/menus/) row: the templates' navigations are suggested), their images to the imported attachments, and their links to the source site to the other site.
+- **Widgets** chosen go at the **end of the same sidebar**, next to the other site's own widgets (to *Inactive widgets* when its theme has no such sidebar), each with a free number. Importing the same file again with *Update existing* updates them in place instead of adding them twice. A Navigation Menu widget points to the imported menu (export it on the [Menus](https://eizport.github.io/docs/exporting/menus/) row), an image widget to the imported image, and the images and addresses in block widgets to the imported ones.
+
+### From WP-CLI and the ability
+
+```bash
+wp eizport export --types=page --appearance=theme_mods:custom_logo+background_color,custom_css,widgets:text-3
+wp eizport export --appearance=all --css-mode=start --no-css-markers
+wp eizport export --types=page --menus=all --appearance=template_parts:header,templates:page
+wp eizport import delivery.wxrz --css-mode=replace
+```
+
+A row alone takes all of it; a CSS rule's key (`r:…`) comes from [`eizport/get-export-options`](https://eizport.github.io/docs/developers/abilities/#eizportget-export-options), which lists each row's items. The [`eizport/export`](https://eizport.github.io/docs/developers/abilities/#eizportexport) ability takes `appearance` (row → `"all"` or keys), `css_mode` and `css_markers`.
+
+### Limits
+
+- The look goes to the **active theme** of the other site. Exported from one theme and imported with another, theme mods only mean something if that theme uses the same settings.
+- Templates and template parts belong to their theme: imported into a site with another active theme, they wait, unused, until that theme is activated.
+- Fonts installed with the Font Library aren't exported: styles that use them fall back to the other site's fonts.
+- The theme mods no longer come with the Options row's *Basics* group: check **Customizer theme mods**. A block theme's site logo is an option, in *Basics*.
+
+
+---
+
+## Advanced Custom Fields
+
+> Advanced Custom Fields (ACF) on a row of its own: its post types, taxonomies and field groups in ACF's own export format, imported before the content, and the fields that store IDs pointing to the items on the other site.
+
+Source: https://eizport.github.io/docs/exporting/advanced-custom-fields/
+
+With **Advanced Custom Fields (ACF)** active (6.1 or later, the free plugin), the Export screen has an **Advanced Custom Fields (ACF)** row. Its **Choose items** panel lists what ACF registers, each with a preview:
+
+| Item | Preview |
+| --- | --- |
+| **Post type** (*ACF → Post Types*) | Its name (`recipe`) |
+| **Taxonomy** (*ACF → Taxonomies*) | Its name (`cuisine`) |
+| **Field group** (*ACF → Field Groups*) | Its fields and their types: *Photo (image), Related (relationship)…* |
+
+They travel in **ACF's own export format** — the JSON of *ACF → Tools → Export* — inside the bundle's `options.json`, so they need a bundle (`.wxrz`, `.zip`, as plugin or a Playground `.zip`). ACF's own posts (`acf-field-group`, `acf-post-type`…) aren't offered as content rows: this row carries them.
+
+### Suggested
+
+Check the posts (pages, products, an ACF post type…) and the row suggests what they use: the field groups of their values, the ACF post type of their type and the ACF taxonomies of their terms. The posts that their **post object**, **relationship** and **page link** fields point to are suggested in their own rows, and the images and files of **image** and **file** fields come along as media used.
+
+### On the other site
+
+1. **Before the content**, ACF imports the post types, taxonomies and field groups, as *ACF → Tools → Import* does: one with the same key there is **updated**, not duplicated, so a second delivery updates the first. The post types and taxonomies are registered at once, so their posts and terms come in.
+2. The content comes in, with the values in its custom fields.
+3. **When the import ends**, the fields that store IDs get the IDs the items have there:
+
+| Field type | Points to | Mapped by |
+| --- | --- | --- |
+| Image, File | Attachments | The imported attachments (or the ones the site already had) |
+| Post Object, Relationship, Page Link | Posts, pages, any type | The imported items |
+| Taxonomy | Terms | The imported terms |
+| User | Users | The authors, as the importer maps them |
+
+Only IDs that came in the file and changed are touched; a page link to a URL stays as it is. Field groups' location rules on a page or a post get its new ID too. Term values (fields shown on a taxonomy) are mapped as post values.
+
+### What it doesn't
+
+- **ACF PRO** (repeater, flexible content, clone, gallery, options pages, blocks) isn't covered yet.
+- **Values on users** don't travel: a WXR has no users, only the authors of its posts. A user field points to a user there only when that user is an author in the file.
+- **Without ACF active** on the other site, its items aren't imported (the values still come, in the custom fields).
+- Field groups in the theme's **local JSON** (`acf-json/`) travel with the theme.
+
+
+---
+
+## Elementor
+
+> Elementor with its own exporter and importer: the site settings (the Kit) and templates on a row of their own, each page's design as a .json file, and on import every image, template and link pointing to the items on the other site.
+
+Source: https://eizport.github.io/docs/exporting/elementor/
+
+With **Elementor** active, Eizport carries what Elementor's own *Import / Export Kit* does — in Elementor's formats, handed to Elementor's own importer on the other site.
+
+### The Elementor row
+
+The **Elementor** row's **Choose items** panel lists:
+
+| Item | What it is | Preview |
+| --- | --- | --- |
+| **Site settings** | The active Kit: global colors and fonts, layout, theme style (*Elementor → Site Settings*), without the site's name, tagline, logo and icon — as Elementor's Kit export leaves them out | The global colors |
+| **Each template** (*Templates → Saved Templates*) | A section, a page, a container… in Elementor's template file format, the one *Export template* writes | Its type |
+
+They travel in the bundle's `options.json`, so they need a bundle (`.wxrz`, `.zip`, as plugin or a Playground `.zip`). Elementor's library (`elementor_library`) isn't offered as a content row: this row carries it.
+
+### Pages built with Elementor
+
+Check pages, posts — any type — built with Elementor in their own rows. With *Content as .html files* on ([Settings → Export](https://eizport.github.io/docs/settings/export-settings/)), each one's design goes as **`post_content/<slug>.json`**, in Elementor's template file format, instead of its `_elementor_data` inside the WXR; the `.html` files stay for content in blocks. With it off, the design stays in the WXR, and is handled the same way on import.
+
+The rows suggest the rest: **Elementor** shows the site settings and the templates the pages' template widgets show as *suggested*, and the images the designs use — image and gallery widgets, backgrounds — come along as media used.
+
+### On the other site
+
+When the import ends, the design goes through **Elementor's own import**:
+
+1. **Templates** are created as Elementor's Kit import creates them; a template already imported from the same site is updated instead, so a second delivery doesn't add copies.
+2. **Site settings** go through Elementor's own *site settings* import: a new active Kit with the global colors and fonts added to the site's. A later delivery from the same site updates that Kit, its colors and fonts replaced by their ID instead of added again.
+3. **Each page's design** goes through its document's import. Images come from the attachments the bundle brought — Elementor finds them by their source URL instead of downloading them again —, template widgets point to the imported templates, and links to the source site to this one.
+4. Elementor's **generated CSS** is cleared, to be built again.
+
+Without Elementor active on the other site, the designs are written to the pages' meta, with their images and templates mapped, ready for when Elementor is activated.
+
+### What it doesn't
+
+- **Elementor Pro** (Theme Builder templates and conditions, popups, forms) isn't covered yet.
+- **Dynamic tags** that point to a post or a term by ID keep that ID.
+- A link to a page that isn't in the file points to the same address on this site.
+
+
+---
+
+## Media
+
+> Which attachments come with the items exported, how media files go inside bundles, and the "Only attached media" setting.
+
+Source: https://eizport.github.io/docs/exporting/media/
+
+### Which attachments are exported
+
+When you export **some** items (not all content):
+
+1. **WordPress** adds each item's attached media (`post_parent`) and featured image (`_thumbnail_id`).
+2. **The plugin** also adds the media the items **use in their content without being attached**: images, galleries, covers, files, video and audio inserted from the library. It finds them by:
+   - block attributes: `"id"` (image, cover, file, video, audio), `"mediaId"` (media & text), `"ids"` (gallery);
+   - `wp-image-<id>` classes and the `[gallery ids="…"]` shortcode;
+   - upload URLs, sized ones included (`-300x200`), through `attachment_url_to_postid()`.
+3. **Plugins** add more with [`eizport_media_used`](https://eizport.github.io/docs/developers/hooks/#eizport_media_used) — the WooCommerce compatibility adds product galleries.
+
+Turn step 2 off with **Settings → Export → Only attached media**, or per export with `media_used: false`.
+
+### Media files in the bundle
+
+**Media files** (on by default) puts the files of every exported attachment inside the bundle, under `uploads/` with the same folders as on the old site. On import they are served to the importer from the bundle, so nothing is downloaded and the old site can be offline.
+
+Only files in this site's uploads folder go in; offloaded media (a CDN, S3) is left to the importer to download, as usual.
+
+### Example
+
+A page with an attached image (A), a different featured image (B) and an image from the library in its content (C):
+
+| Setting | Exported |
+| --- | --- |
+| Default | the page, A, B, C |
+| Only attached media | the page, A, B |
+
+
+---
+
+## File and formats
+
+> Choose between WordPress's plain WXR, a .wxrz or .zip bundle, a Playground .zip and a plugin that imports itself; file names and what each one holds.
+
+Source: https://eizport.github.io/docs/exporting/file-and-formats/
+
+The **Format** toggle, in the **Details** panel above the list, has two choices; the first one's name follows what goes in the file.
+
+| Shown as | File | When | Holds |
+| --- | --- | --- | --- |
+| **WXR XML** | `.xml` | Media files off and no options | WordPress's own export, unchanged |
+| **WXR ZIP** | `.zip` | Media files or options (the default) | A [bundle as a plain .zip](https://eizport.github.io/docs/formats/zip-bundle/): the WXR, media, `post_content/`, `options.json` |
+| **WXRZ** | `.wxrz` | Same, with *Bundle as .zip* off | The same [bundle as a gzipped tar](https://eizport.github.io/docs/formats/wxrz-bundle/) |
+| **Playground** | `.zip` | Chosen | A [Playground blueprint bundle](https://eizport.github.io/docs/formats/playground-zip/) with themes and plugins |
+| **As plugin** | `.zip` | *As plugin* on (not with Playground) | A plugin holding the bundle, which imports it on the other site with one click ([as plugin](https://eizport.github.io/docs/exporting/as-plugin/)) |
+
+### As plugin
+
+The **As plugin** toggle, next to *Media files* (its ⓘ explains it), wraps the bundle in a plugin `.zip`. Install it on the other site like any plugin and click **Run import** on its row on the Plugins screen: no file to upload. See [as plugin](https://eizport.github.io/docs/exporting/as-plugin/).
+
+### Update existing
+
+**Update existing**, in the **Details** panel, asks the import to update the items of the chosen content types that already exist on the other site (same type and slug) instead of adding copies — its ⓘ names those types (all of them with nothing checked), and it is disabled when only rows without content are checked: menus, options, the look. It's saved in the bundle (`update_existing` in the manifest), and the importer's box comes checked; with WP-CLI and the ability, the import updates only when asked. Not with WXR XML or Playground. See [updating items that already exist](https://eizport.github.io/docs/getting-started/importing/#updating-items-that-already-exist).
+
+### File name
+
+Leave it empty for WordPress's usual name, `<site name>.WordPress.<date>` — the placeholder shows the exact one for today. A name you type is sanitized and the extension is added.
+
+### Content as .html files
+
+With **Settings → Export → Content as .html files** (on by default), each post's content goes to `post_content/<slug>.html` instead of inside the WXR — easy to read, diff and keep under version control. On import it is put back before the importer runs. A page built with [Elementor](https://eizport.github.io/docs/exporting/elementor/) goes as `post_content/<slug>.json` instead: its design in Elementor's format, brought in by Elementor's own import.
+
+### Copies
+
+Every export made on the new screen or by the ability is kept as a **copy** for a while (a day by default), with an unguessable name, and listed in [Settings → Copies](https://eizport.github.io/docs/settings/copies/).
+
+
+---
+
+## As plugin
+
+> Export a plugin that imports its own bundle: install it on the other site, check what it needs, Run import, then delete it.
+
+Source: https://eizport.github.io/docs/exporting/as-plugin/
+
+**As plugin**, next to *Media files* in the Export screen's **Details** panel, makes the file a plugin `.zip` holding the bundle. Install it on the other site like any plugin, and it imports itself — no file to upload, no importer screen to go through.
+
+*Screenshot: The plugin's screen on the other site after Run import: everything it needs checked, the result, and "Deactivate and delete this plugin".*
+
+### What's inside
+
+```
+mysite-wordpress-2026-10-12.zip
+└── mysite-wordpress-2026-10-12-k3x9q2m7a1b8c4d6/
+    ├── mysite-wordpress-2026-10-12-k3x9q2m7a1b8c4d6.php   the plugin: "Import: mysite-wordpress-2026-10-12"
+    ├── readme.txt                                         what it is, as WordPress.org's Plugin Check asks
+    └── mysite-wordpress-2026-10-12-k3x9q2m7a1b8c4d6.zip   the bundle (content, media, settings, as chosen)
+```
+
+The plugin's folder and file are named after the export's file name, plus the random part of the copy's name in lowercase (the same one [Copies](https://eizport.github.io/docs/settings/copies/) shows). So no file name can turn it into another plugin: an export named `woocommerce` is still `woocommerce-<random>/`, never WooCommerce's folder. Each delivery installs as its own plugin.
+
+**Settings → Export → As plugin holds the bundle as** can put the bundle's files in the plugin instead of the bundle file — the same entries, the WXR formatted line by line, to look at or change before installing. **Next to the plugin's**, the plugin's folder is the bundle:
+
+```
+mysite-wordpress-2026-10-12.zip
+└── mysite-wordpress-2026-10-12-k3x9q2m7a1b8c4d6/
+    ├── mysite-wordpress-2026-10-12-k3x9q2m7a1b8c4d6.php
+    ├── manifest.json
+    ├── mysite.WordPress.2026-10-12.xml
+    ├── post_content/home.html
+    ├── options.json
+    └── uploads/2026/10/photo.jpg
+```
+
+**In a bundle/ folder**, the same files go under `bundle/`, apart from the plugin's. The plugin's header (`Eizport Bundle:`) names `manifest.json` or `bundle/manifest.json`.
+
+The default stays one file — a `.zip`, or a `.wxrz` with *Bundle as .zip* off: a smaller download, and the files can't be told apart from the plugin's. Either way, the files are reachable by URL while the plugin is installed — delete it after the import. It doesn't work with the Playground format: the toggle is off and disabled there.
+
+### On the other site
+
+1. **Plugins → Add Plugin → Upload Plugin**, choose the `.zip`, **Install Now**, **Activate**.
+2. **Run import** on the plugin's row on the Plugins screen — or its entry in **Tools → Import**, set apart from the other importers, and a notice until it's imported — opens its screen. It isn't in the menu (a one-off import has no place there); on it, *Tools → Import* shows as the current item. While it waits, Tools → Import shows the importers' list instead of going straight to the WordPress Importer. Nothing redirects you on activation.
+3. The screen lists what it needs, each with a ✓ or a link:
+   - **Eizport**, active — it draws the screen and runs the import. Without it, or with a version older than the bundle needs, the same screen shows ✗ and **Install Now**, **Activate** or **Update now**, done right there; then the page reloads with what Eizport reads. Until then **What it holds** is dimmed and closed, and *Update existing* and **Run import** are disabled;
+   - **the WordPress Importer**, installed — with an *Install Now* button that installs and activates it right there, like Tools → Import installs an importer (*Installing…*, *Activating…*, then ✓ and **Run import** ready);
+   - **the bundle**, with its size and date;
+   - **Update the items that already exist (same type and slug) instead of adding copies: Pages and Posts** — it names the content types the bundle holds, and isn't shown when it holds none — checked when the export had *Update existing* on (the plugin's `Eizport Update:` header). See [updating items that already exist](https://eizport.github.io/docs/getting-started/importing/#updating-items-that-already-exist).
+4. **Run import** imports the bundle the plugin holds. The page waits while it runs (the WordPress Importer doesn't report progress), then shows how many items were imported, the settings set and the importer's messages.
+5. Once imported, the screen's main button is **Deactivate and delete**: it did its job and holds a large file. Under **Also delete**, Eizport and the WordPress Importer can go in the same action — checked when they were installed for this import (the plugin notes, when activated, which were already there), unchecked otherwise. Where WordPress asks for FTP credentials to delete files, it is deactivated and you delete it from the Plugins screen.
+
+After the import the screen doesn't offer to import again, unless the export had **Settings → Export → As plugin: allow importing again** on: then **Import again** stays, folded. Importing again finds the items already imported and doesn't duplicate them; with *Update existing*, a new delivery of the same content updates them.
+
+The plugin is named after the export's file: *Import: EIZP-000* for `EIZP-000.zip`.
+
+The same `.zip` also imports without installing it: upload it in **Tools → Import → WordPress**, like a `.wxrz`, or give it to `wp eizport import`. Eizport takes the bundle out of the plugin.
+
+
+### Safety
+
+The plugin imports only the bundle its own header names (`Eizport Bundle:`), from its own folder. **Run import** needs the `import` capability and a nonce; deleting needs `delete_plugins`. The plugin's code is a small file anyone can read; it downloads nothing.
+
+In [Copies](https://eizport.github.io/docs/settings/copies/) it shows as *Plugin .zip*: it can be downloaded, not imported into the same site — install it as a plugin instead.
+
+
+---
+
+## Saved defaults
+
+> Save the Export screen's choices as default, per user or for the whole site, on both screens.
+
+Source: https://eizport.github.io/docs/exporting/saved-defaults/
+
+**Save as default** keeps everything you chose: content types with their items (or filters, on the classic screen), options, format, file name, media files and Playground themes and plugins. The Export screen opens with them, and **Reset to defaults** goes back to them. Nothing else is kept: choices you don't save are forgotten when you leave or reload the screen.
+
+### Whose defaults
+
+**Settings → General → Defaults are saved for**:
+
+- **Each user** (default) — stored in user meta; anyone who can export saves their own.
+- **The whole site** — one set for everyone; saving or clearing it needs `manage_options`.
+
+### Both screens
+
+- **New screen:** *Save as default* in the header; *Reset to defaults* goes back to them, and *Clear defaults* (active once the choices are the defaults) forgets them.
+- **Classic screen:** check *Save these choices as my default* before downloading. The classic screen starts filled with the defaults too.
+
+### Clearing
+
+*Clear defaults* in the Export screen's header, *Clear saved defaults* in Settings → General, or the [`eizport/clear-export-defaults`](https://eizport.github.io/docs/developers/abilities/#defaults) ability.
+
+### What is checked
+
+Defaults are sanitized when saved and again when loaded: unknown types and items, options that are never exported and themes or plugins no longer installed are dropped. Filters keep only the values that are set.
+
+
+---
+
+## Classic screen
+
+> WordPress's own Tools → Export with the plugin's choices added, for those who prefer it; also on phones.
+
+Source: https://eizport.github.io/docs/exporting/classic-screen/
+
+**Settings → General → Use the classic Export screen** makes Tools → Export open WordPress's own screen, with the plugin's choices added. It is always at `wp-admin/export.php?classic=1`.
+
+It exists only while **Replace Tools → Export** is on (the default). Off, WordPress's Export screen gets nothing from the plugin, and the setting is hidden: the plugin's screen is at **Tools → Eizport**.
+
+### What it adds
+
+- **Several content types:** core's single choice becomes checkboxes ("All content" stays).
+- **By filters or by selection** per type: WordPress's filters for posts, pages and media; the same kind for products and custom post types (dates, status, author, each taxonomy); or a checklist (a tree for pages) with a box to filter it.
+- **Bundle (.wxrz or .zip):** file name, media files, settings (groups, homepage and posts page, other options by name), a Playground blueprint with themes and plugins, and a temporary copy to open by link on playground.wordpress.net.
+- **Save these choices as my default**, and a screen that starts with them.
+
+### On phones
+
+Every checkbox and radio is a row at least 40px high to tap, the box drawn as WordPress draws it; nothing scrolls sideways.
+
+*Screenshot: The classic screen on a phone: bundle options with 40px rows.*
+
+### Without JavaScript
+
+The type checkboxes stay core's radios and one type is exported, still by filters or by selection.
+
+
+---
+
+## WXRZ bundle
+
+> The .wxrz format, entry by entry — manifest, WXR, media, post_content and options.json — and the safety rules when one is opened.
+
+Source: https://eizport.github.io/docs/formats/wxrz-bundle/
+
+A `.wxrz` file is a **gzipped tar archive** (`ustar`). Any tool that reads `.tar.gz` opens it:
+
+```bash
+tar tzvf site.wxrz        # list
+tar xzf site.wxrz -C out  # extract
+```
+
+### Entries
+
+```text
+manifest.json                      required, first
+<site>.WordPress.<date>.xml        the WXR (WordPress eXtended RSS)
+options.json                       optional: settings
+post_content/<slug>.html           optional: one per post with content
+post_content/<slug>.json           optional: one per page built with Elementor, its design
+uploads/2026/10/photo.jpg          optional: media files, as in wp-content/uploads
+```
+
+### manifest.json
+
+Its [JSON Schema](https://eizport.github.io/schemas/1.1/manifest.json) is named in the manifest's `$schema`, so a code editor (VS Code, PhpStorm…) checks a manifest edited by hand and completes its keys; Eizport checks it against the same schema before importing, and says which key is wrong. Each version has its own, frozen once released; [`schemas/trunk/manifest.json`](https://eizport.github.io/schemas/trunk/manifest.json) is always the newest.
+
+```json
+{
+  "$schema": "https://eizport.github.io/schemas/1.1/manifest.json",
+  "format": "wxrz",
+  "version": 2,
+  "requires": "1.1.0",
+  "generator": "Eizport 1.1.0",
+  "site": "https://example.com/",
+  "created": "2026-10-10T22:11:50+00:00",
+  "wxr": [ "example.WordPress.2026-10-10.xml" ],
+  "files": {
+    "https://example.com/wp-content/uploads/2026/10/photo.jpg": "uploads/2026/10/photo.jpg"
+  },
+  "options": "options.json",
+  "update_existing": true,
+  "term_media": {
+    "product_cat": { "western": { "thumbnail_id": 13 } }
+  },
+  "post_content": {
+    "home.html": { "id": 43, "type": "page", "slug": "home" }
+  }
+}
+```
+
+| Key | Meaning |
+| --- | --- |
+| `$schema` | The schema's URL, for editors |
+| `format`, `version` | Always `"wxrz"`; the layout's version — `2` since Eizport 1.1.0, `1` before. A reader takes the versions it knows and refuses newer ones |
+| `requires` | The oldest Eizport that reads it (`1.1.0`); rises only when the layout does. An older Eizport refuses the bundle and says to update — Eizport 1.0.x refuses it as having no valid manifest |
+| `generator`, `site`, `created` | Who made it (`Eizport <version>`, shown on a bundle plugin's screen), from where, when |
+| `wxr` | The WXR entry's name (the first one is read) |
+| `files` | Attachment URL in the WXR → entry in the archive. The importer's download of that URL is answered with the entry |
+| `options` | The options file's entry, when there is one |
+| `update_existing` | `true` when the import should update the items that already exist (same type and slug): the importer's box comes checked. WP-CLI and the ability update only when asked |
+| `term_media` | Taxonomy → term slug → meta key → attachment ID on the exporting site, for the terms the items use ([`eizport_term_media`](https://eizport.github.io/docs/developers/hooks/#eizport_term_media)); mapped to the imported attachment at the end of the import |
+| `post_content` | Content file → the item it belongs to: original `id`, `type` and `slug` |
+
+### options.json
+
+```json
+{
+  "format": "eizport-options",
+  "version": 1,
+  "options": {
+    "show_on_front": "page",
+    "page_on_front": "43",
+    "blogname": "Example"
+  },
+  "post_ids": [ "page_on_front" ]
+}
+```
+
+`options` are set with `update_option()` when the import ends. Each name in `post_ids` holds a post ID: it gets the ID the importer gave that post, or is left out if the post wasn't imported.
+
+### post_content/
+
+Each file is the item's `post_content`, byte for byte; in the WXR, the item's `<content:encoded>` is empty. On import, the content is put back into the WXR item with the same original ID (else the same type and slug) before the importer reads it. The [`eizport_post_content`](https://eizport.github.io/docs/developers/hooks/#eizport_post_content) filter can change it.
+
+### Opening a bundle safely
+
+When a bundle is imported:
+
+- only entries the manifest lists, plus `post_content/` files and `options.json`, are written;
+- every media entry must be under `uploads/`, with no `..`, backslash, null byte or `//`, and a file type WordPress allows to be uploaded (`wp_check_filetype()`): never PHP;
+- everything goes to a new private folder in `wp-content/uploads/eizport/tmp/`, deleted after the import;
+- the archive may expand to **512 MB** at most (filter [`eizport_wxrz_max_bytes`](https://eizport.github.io/docs/developers/hooks/#eizport_wxrz_max_bytes)), read in steps, against decompression bombs;
+- entry names longer than `ustar` allows are skipped on export: the importer downloads those files instead.
+
+> Only import files you trust, as with any WXR: a bundle can't run code, but its content and settings become your site's.
+
+
+---
+
+## ZIP bundle
+
+> The same bundle as a plain .zip, which any computer opens — how to turn it on and how it is read.
+
+Source: https://eizport.github.io/docs/formats/zip-bundle/
+
+By default (**Settings → Export → Bundle as .zip**, on), bundles are plain `.zip` files instead of `.wxrz` — inside a plugin made as plugin too. The entries are **exactly the same** — `manifest.json`, the WXR, `options.json`, `post_content/`, `uploads/` — so everything on the [WXRZ page](https://eizport.github.io/docs/formats/wxrz-bundle/) applies.
+
+### Why
+
+A `.zip` opens with a double click on any computer; `.wxrz` needs a tool that reads `.tar.gz`. Choose `.zip` when people will look inside the file; keep `.wxrz` when it only travels between sites.
+
+### Per export
+
+The setting is the default. The [`eizport/export`](https://eizport.github.io/docs/developers/abilities/#eizportexport) ability takes `zip: true` or `zip: false` for one export.
+
+### How it is written and read
+
+The plugin writes the tar bundle and turns it into a `.zip` (with `ZipArchive`, or core's PclZip), and on import turns a `.zip` back into a tar before reading it — one code path for both, with the same checks:
+
+- only bundle entries are taken (the manifest, a top-level `.xml`, `options.json`, `post_content/*.html`, safe `uploads/` files);
+- the uncompressed size counts against the same 512 MB limit.
+
+### Telling bundles from Playground files
+
+Both end in `.zip`. A bundle has `manifest.json` and no `blueprint.json`; a Playground `.zip` has `blueprint.json`. The importer and the Copies list tell them apart that way.
+
+
+---
+
+## Playground zip
+
+> A WordPress Playground blueprint bundle that boots a site with the exported content, media, theme and plugins — how it's built and how to run it.
+
+Source: https://eizport.github.io/docs/formats/playground-zip/
+
+With the **Playground** format, the export is a `.zip` ready for [WordPress Playground](https://wordpress.org/playground/): a blueprint bundle that installs the themes and plugins you chose and imports the content.
+
+*Screenshot: Playground themes and plugins: what the .zip installs.*
+
+### Run it
+
+```bash
+npx @wp-playground/cli@latest server --blueprint=./site.zip
+```
+
+Or open its link on playground.wordpress.net (new screen: the **Open in Playground** action in [Copies](https://eizport.github.io/docs/settings/copies/); classic screen: *Keep a copy to open by link*). The copy is served with the CORS headers Playground needs.
+
+**Even from a local server.** Playground runs in your browser, so a copy made on WordPress Studio or any `localhost` site opens on playground.wordpress.net without uploading it anywhere — the browser fetches it from your machine (the link works on your computer only).
+
+### Playground options
+
+**Details → Playground options** (enabled with the Playground format) opens three groups, one at a time; the button counts what's set.
+
+### Landing page
+
+Where Playground opens once the site is ready — **Home page** (the default), **Dashboard**, **A page** of this site, or **A path** (`/shop/`). A page goes in the blueprint as a relative path, `/?pagename=<its path>`, so it opens the same page whatever ID it gets in Playground. (Without it, Playground itself would open the dashboard.)
+
+### Language
+
+The language Playground opens in — **Site language** (the default), **Your language** (shown when your profile's is another one) or **English (United States)**. In another language than English, the blueprint runs Playground's `setSiteLanguage` step after the installs: it sets the site's language and fetches the translations of WordPress and of the themes and plugins from the WordPress.org directory. The translations this site has of the others — premium, custom — go inside the `.zip`. A language this site hasn't installed isn't offered.
+
+### Themes and plugins
+
+Any **installed** theme or plugin can go in. Plugins are installed **active or inactive as they are on this site**; of the themes, this site's is activated (when chosen), and a child theme brings its parent. The ones from the WordPress.org directory aren't copied: the blueprint installs them from the directory, **in the version this site has** (`woocommerce.11.2.1.zip`), when the directory has that version — a release, not newer than the directory's. The others — premium, custom, in-house, and a development, beta or RC version (`1.1.0-dev`) — are zipped from the site into the bundle, and Playground installs them from there. WordPress's own update check says which ones are from the directory.
+
+**Must-use plugins** (`wp-content/mu-plugins/`) are listed too, when the site has any: each one chosen goes inside the `.zip`, with the folder it loads (`require __DIR__ . '/<folder>/…'`, or a `<name>/` folder next to `<name>.php`). The ones the platform puts there — WordPress Studio's SQLite loader, hosts' loaders — and Eizport's own temporary ones aren't offered; the [`eizport_playground_mu_plugins`](https://eizport.github.io/docs/developers/hooks/#eizport_playground_mu_plugins) filter changes the list.
+
+> **Use it responsibly.** Premium and custom themes and plugins are copied into the file. Share a Playground `.zip` only where their licenses allow — keep the ones with paid licenses to yourself or your team.
+
+### Inside
+
+```text
+blueprint.json
+<site>.WordPress.<date>.xml        the plain WXR (content inside, not in post_content/)
+uploads/…                          media files, when Media files is on
+post_content/…                     content files, when Content as .html files is on
+themes/<stylesheet>.zip            each theme chosen that isn't in the directory (a child brings its parent)
+plugins/<slug>.zip                 each plugin chosen that isn't in the directory
+languages/plugins|themes/…         their translations, in a language other than English
+mu-plugins/<file>.php              each must-use plugin chosen
+mu-plugins/<folder>.zip            each folder they load
+```
+
+### What the blueprint does
+
+1. Installs the themes (parents first) — from the directory or from the bundle — and activates the active one, if chosen, else the first.
+2. Installs and activates the plugins, the same way.
+3. In another language: sets it (`setSiteLanguage`, which fetches the directory's translations) and writes the bundled ones.
+4. Writes the must-use plugins and unzips their folders into `wp-content/mu-plugins/`, before the import: the post types and taxonomies they register are there for it.
+5. Writes the media and content files and two temporary must-use plugins: one answers the importer's media downloads from the files and puts each `.html` back into its post (`wp_import_post_data_raw`); the other sets the options when the import ends, with IDs mapped.
+6. Runs `importWxr` (Playground installs the WordPress Importer itself).
+7. Removes the temporary plugins and files.
+
+The [`eizport_playground_blueprint`](https://eizport.github.io/docs/developers/hooks/#eizport_playground_blueprint) filter changes the blueprint before it is written.
+
+
+---
+
+## General
+
+> The plugin's Settings → General — whether Tools → Export is replaced, the classic screen, saved defaults and how long copies are kept.
+
+Source: https://eizport.github.io/docs/settings/general/
+
+*Screenshot: The plugin's Settings → General.*
+
+The plugin's settings open from the **Settings** link in its row in **Plugins** (`wp-admin/plugins.php?page=eizport-settings-wp-admin`); they have no item in the Settings menu.
+
+### Export screen
+
+| Setting | Default | |
+| --- | --- | --- |
+| **Replace Tools → Export** | On | Tools → Export opens the plugin's Export screen. Off, WordPress's Export screen stays as it is, with nothing added, and the plugin's is at **Tools → Eizport** |
+| **Use the classic Export screen** | Off | Only while Tools → Export is replaced. | Tools → Export opens WordPress's own screen with the plugin's choices, instead of the new one ([classic screen](https://eizport.github.io/docs/exporting/classic-screen/)) |
+| **Defaults are saved for** | Each user | Or *The whole site* ([saved defaults](https://eizport.github.io/docs/exporting/saved-defaults/)) |
+
+### Import screen
+
+| Setting | Default | |
+| --- | --- | --- |
+| **Open the WordPress Importer from Tools → Import** | On | Tools → Import goes straight to the WordPress Importer, when it is active; its screen links to **All importers** (`import.php?all=1`). Off, Tools → Import lists them, as WordPress does |
+| **Style Tools → Import → WordPress** | On | The WordPress Importer looks like the plugin's Export screen: a header with the main button, its steps in cards, and a file button in the admin's language. Off, it looks as WordPress made it; `.wxrz` bundles are accepted either way ([importing](https://eizport.github.io/docs/getting-started/importing/)) |
+
+*Clear saved defaults* forgets them (the current user's, or the site's).
+
+### Copies
+
+**Keep copies for**: 1 hour, 12 hours, **1 day** (default), 1 week, or until deleted. After that a copy stops being served and is deleted by a cron event (and on the next use, where cron doesn't run). Copies already kept follow a new choice too. Developers can override it with [`eizport_copy_lifetime`](https://eizport.github.io/docs/developers/hooks/#eizport_copy_lifetime).
+
+### Who can change them
+
+Settings need `manage_options`. The page itself opens for anyone who can export (to see the copies).
+
+
+---
+
+## Export settings
+
+> The plugin's Settings → Export — attached media, linked settings, .zip bundles and content as .html files.
+
+Source: https://eizport.github.io/docs/settings/export-settings/
+
+*Screenshot: The plugin's Settings → Export.*
+
+All in one card, **With the items exported**:
+
+| Setting | Default | Per export (`eizport/export`) |
+| --- | --- | --- |
+| **Only attached media** — items bring only their attached media and featured images, as WordPress does, not the media used in their content ([media](https://eizport.github.io/docs/exporting/media/)) | Off | `media_used` |
+| **Linked settings** — when settings that point to the items exported come along: when items are checked and on export, when checked, on export, never ([options](https://eizport.github.io/docs/exporting/options/#linked-settings)) | Both | `options.linked` |
+| **Bundle as .zip** — bundles are plain `.zip` instead of `.wxrz` ([ZIP bundle](https://eizport.github.io/docs/formats/zip-bundle/)), inside a plugin made [as plugin](https://eizport.github.io/docs/exporting/as-plugin/) too | On | `zip` |
+| **As plugin: allow importing again** — a plugin exported [as plugin](https://eizport.github.io/docs/exporting/as-plugin/) still offers *Import again* once it imported | Off | — |
+| **As plugin holds the bundle as** — in a plugin exported [as plugin](https://eizport.github.io/docs/exporting/as-plugin/): one file (`.zip`, or `.wxrz` with *Bundle as .zip* off), or its files next to the plugin's, or in a `bundle/` folder | One file | — |
+| **Content as .html files** — each post's content in `post_content/<slug>.html` (a page built with Elementor: its design in `<slug>.json`) | On | `post_content` |
+| **Mark imported CSS** — CSS rules from the [look's rows](https://eizport.github.io/docs/exporting/appearance/) go between `/* head … */` and `/* tail … */` comments named after the file, to show where they came from; the importer can change it | On | `css_markers` |
+
+
+---
+
+## Copies
+
+> The exports kept on the site — download, open in Playground, copy the link, import, delete — and how their links work.
+
+Source: https://eizport.github.io/docs/settings/copies/
+
+*Screenshot: The plugin's Settings → Copies: a .wxrz, a .zip bundle and a Playground .zip.*
+
+Every export from the new screen or the ability is kept as a copy in `wp-content/uploads/eizport/tmp/`, listed like the Media Library: search, sort, filter by format.
+
+### Actions
+
+| Action | For |
+| --- | --- |
+| **Open in Playground** | Playground `.zip` copies: opens playground.wordpress.net with the copy's link |
+| **Download** | Every copy |
+| **Copy link** | Every copy: anyone with the link can download it until it expires |
+| **Import** | Bundles and WXR files: imports into this site |
+| **Delete permanently** | One, several (check them) or **Delete all** in the header |
+
+### Links and privacy
+
+A copy's link is meant to be shared with Playground or a teammate, not found by anyone else:
+
+- **A token like a password:** the name ends in a random 16-character token (`site-w9bjZ9pyEWxC8VMf.zip`, from a cryptographic generator), so the link can't be guessed. The list shows the name without it (`site.zip`); hovering shows it whole.
+- **Served by PHP, only until it expires:** the link goes through WordPress (`?eizport_playground=<name>`), which checks the expiry and sends the CORS headers Playground needs.
+- **Out of search engines:** the response carries `X-Robots-Tag: noindex, nofollow, noarchive`, and the site's `robots.txt` gets `Disallow` rules for the copies' folder and links.
+- **No direct access:** `uploads/eizport/.htaccess` denies direct requests on Apache and LiteSpeed, and every folder has an `index.php`, so nothing is listed. On nginx, `.htaccess` doesn't apply; deny `/wp-content/uploads/eizport/` in the server's configuration for the same effect — the token, the expiry and robots.txt still protect the files.
+
+Don't keep copies of content that must stay private.
+
+### On a local site
+
+Copies made on a local site (WordPress Studio, `localhost`) open on playground.wordpress.net too: Playground runs **in your browser**, which can reach your local server. The link works only on your computer — perfect for testing a demo before sharing it.
+
+### Cleanup
+
+Expired copies are deleted by a cron event and on the next use; the `tmp/` folder itself goes once it is empty. Uninstalling the plugin deletes `uploads/eizport/`.
+
+
+---
+
+## AI agents
+
+> Let an AI agent export, import and manage copies for you: the abilities over MCP, what to ask, what the agent sees, and the safety built in.
+
+Source: https://eizport.github.io/docs/developers/ai-agents/
+
+Eizport is **agent-first**: everything the screens do is an [ability](https://eizport.github.io/docs/developers/abilities/) of the WordPress Abilities API — a named action with a JSON Schema for its input and output, a permission check, and hints saying whether it only reads or deletes. That is exactly what an AI agent needs to act on a site safely, without screen scraping.
+
+### Connect an agent
+
+1. Install the [MCP Adapter](https://github.com/WordPress/mcp-adapter) on the site. It exposes abilities as **MCP tools**.
+2. Connect your MCP client (an AI assistant, an IDE agent, a CLI agent) to the site as described in the adapter's docs, with a user who can export (and import, if the agent should import).
+3. Ask in plain words. The agent lists the `eizport/*` tools, reads their schemas, and calls them.
+
+On a local [WordPress Studio](https://developer.wordpress.com/studio/) site, Studio's own MCP server can run the same abilities through its `wp_cli` tool (`wp eval`, see [WP-CLI](https://eizport.github.io/docs/developers/wp-cli/)).
+
+### What to ask
+
+| You ask | The agent calls |
+| --- | --- |
+| “What can I export from this site?” | `eizport/get-export-options` |
+| “Which page is the homepage, and which ones are the shop and checkout?” | `eizport/get-items` (`roles` on each item) |
+| “Export the homepage with its images and the basic settings as a .zip.” | `eizport/get-items`, then `eizport/export` with `types`, `options.groups: ["basics"]`, `zip: true` |
+| “Export every published product in the Shoes category, for Playground, with WooCommerce.” | `eizport/get-export-options` (term ID), then `eizport/export` with `filters` and `blueprint.plugins` |
+| “Which settings mention the newsletter?” | `eizport/get-options` with `search` |
+| “List the copies and delete the ones older than a day.” | `eizport/get-copies`, then `eizport/delete-copies` |
+| “Import the store-products copy here.” | `eizport/import` with `copy` |
+| “Save this as my default export.” | `eizport/save-export-defaults` |
+
+### What the agent sees
+
+Each tool carries its **description**, its **input schema** (types, enums, defaults, required fields) and its **output schema**, and the MCP annotations:
+
+- **read-only** — `get-export-options`, `get-items`, `get-options`, `get-copies`, `get-export-defaults`, `get-settings`: safe to call while exploring;
+- **destructive** — `delete-copies`, `clear-export-defaults`: a well-behaved agent asks before calling them;
+- **idempotent** — calling again changes nothing more.
+
+Errors come back as codes an agent can act on: `eizport_invalid_type` (a post type that can't be exported), `eizport_invalid_options` (an option that is never exported), `eizport_invalid_blueprint` (a theme or plugin not installed), `eizport_export_unavailable` (one export per request: call again).
+
+### Safety built in
+
+- **WordPress's permissions:** the agent can only do what its user can — `export` for exports and copies, `import` to import, `manage_options` for settings.
+- **No secrets leave:** site URLs, the admin email, keys and salts, users and roles, active plugins, transients and caches are never exported, whatever the agent asks — nor options, theme mods or widget fields named like secrets (passwords, tokens, API and license keys).
+- **Copies are temporary and hidden:** a random 16-character token in each link, `noindex` and robots.txt, a folder locked against direct access, and deletion when they expire ([copies](https://eizport.github.io/docs/settings/copies/)).
+- **Imports merge**, they don't overwrite the site.
+
+### Docs for agents
+
+This documentation is written for agents too:
+
+- [`/llms.txt`](https://eizport.github.io/llms.txt) — an index of every page, with descriptions, linking to Markdown versions;
+- [`/llms-full.txt`](https://eizport.github.io/llms-full.txt) — the whole documentation in one file;
+- every page as Markdown — the same URL ending in `.md` (see “View as Markdown” at the bottom of each page).
+
+Point your agent at `llms.txt` and it knows the plugin before its first call.
+
+
+---
+
+## Abilities
+
+> Every eizport/* ability of the WordPress Abilities API — input, output, permission — over REST, PHP and MCP.
+
+Source: https://eizport.github.io/docs/developers/abilities/
+
+Everything the screens do is an **ability** of the [Abilities API](https://developer.wordpress.org/apis/abilities/) (WordPress 6.9+), in the category `eizport`. The Export and Settings screens call them too, so code, AI agents and the UI share one path.
+
+### Calling them
+
+**REST** (`/wp-json/wp-abilities/v1/abilities/<name>/run`, authenticated: cookie + nonce, or an application password):
+
+```bash
+curl -u admin:APP_PASSWORD -X POST \
+  -H "Content-Type: application/json" \
+  https://example.com/wp-json/wp-abilities/v1/abilities/eizport/export/run \
+  -d '{"input":{"types":{"page":{"ids":[43]}},"options":{"groups":["basics"]}}}'
+```
+
+Read-only abilities run with `GET` and the input in the query string.
+
+**PHP**:
+
+```php
+$copy = wp_get_ability( 'eizport/export' )->execute(
+	array(
+		'types' => array( 'product' => array( 'filters' => array( 'status' => 'publish' ) ) ),
+		'zip'   => true,
+	)
+);
+if ( ! is_wp_error( $copy ) ) {
+	echo $copy['download_url'];
+}
+```
+
+**MCP**: with the [MCP adapter](https://github.com/WordPress/mcp-adapter), each ability is a tool an AI agent can call.
+
+> One export runs per request: `export_wp()` defines its helpers inside itself. A second `eizport/export` in the same request returns `eizport_export_unavailable`.
+
+### Overview
+
+| Ability | Does | Permission | Annotations |
+| --- | --- | --- | --- |
+| `eizport/get-export-options` | What can be exported | `export` | readonly |
+| `eizport/get-items` | A page of one type's items | `export` | readonly |
+| `eizport/get-options` | The site's options, one by one | `export` | readonly |
+| `eizport/get-suggestions` | What the items chosen suggest | `export` | readonly |
+| `eizport/get-reviews` | A page of product reviews | `export` | readonly |
+| `eizport/export` | Exports to a copy | `export` | — |
+| `eizport/get-copies` | The copies kept | `export` | readonly |
+| `eizport/delete-copies` | Deletes copies | `export` | destructive, idempotent |
+| `eizport/import` | Imports a copy or a media file | `import` | — |
+| `eizport/get-export-defaults` | The saved defaults | `export` | readonly |
+| `eizport/save-export-defaults` | Saves defaults | `export` (site's: `manage_options`) | idempotent |
+| `eizport/clear-export-defaults` | Forgets them | as above | destructive |
+| `eizport/get-settings` | The plugin's settings | `manage_options` | readonly |
+| `eizport/update-settings` | Changes settings | `manage_options` | idempotent |
+
+### eizport/get-export-options
+
+No input. Returns `types` (each with `type`, `label`, `count`, `hierarchical`, `statuses` and `taxonomies` with their terms), `option_groups` (`group`, `label`, `options`), `front_pages` (`front`, `posts` IDs), `themes`, `plugins`, `copy_lifetime` (seconds), `filename` (today's default name), `linked` (the linked settings mode), `bundle_zip`, `review_count` (approved product reviews; 0 without WooCommerce) `appearance` (`theme_mods`, `custom_css`, `global_styles`, `global_css`, `templates`, `template_parts`, `widgets`, `advanced-custom-fields`, `elementor` → their items: `key`, `label`, `details`, `preview`; see [Appearance](https://eizport.github.io/docs/exporting/appearance/)) and `menus`: `classic` (`id`, `name`, `slug`, `items`, `locations` — the labels of the theme locations it sits in) and `navigation` (`id`, `title`, `links`) — see [Menus](https://eizport.github.io/docs/exporting/menus/).
+
+### eizport/get-items
+
+| Input | Type | |
+| --- | --- | --- |
+| `type` | string, required | A post type from `get-export-options` |
+| `search` | string | |
+| `page`, `per_page` | integer | `per_page` up to 100 |
+| `orderby` | `date` \| `title` \| `menu_order` | |
+| `order` | `asc` \| `desc` | |
+| `filters` | object | `author`, `start_date`/`end_date` (`YYYY-MM`), `status`, `terms` (term IDs) |
+| `include` | integer[] | Only these items (none: an empty page) |
+
+Returns `items` — `id`, `title`, `status`, `date`, `parent`, `author`, `file` (attachments), `roles` (`option`, `label`, `with`) — plus `total` and `total_pages`.
+
+### eizport/get-options
+
+Input: `search`, `group` (a key of `option_groups`), `names` (only these), `page`, `per_page`. Returns `items` (`name`, `size`, `value` — in a line, arrays as JSON, up to 200 characters — `autoload`, `post_id`), `total`, `total_pages`. Options that are never exported and transients are left out.
+
+### eizport/get-suggestions
+
+Input: `types` (as `eizport/export` takes them), `whole` (post types chosen whole, the same as `{}` in `types`) and `menus.classic` (menus chosen). Returns `items` (post type → IDs the items' content uses, through [`eizport_suggested_items`](https://eizport.github.io/docs/developers/hooks/#eizport_suggested_items), and the pages and posts the menus chosen link to), `reviews` (approved reviews of the products chosen), `options` (settings pointing to the items, unless *Linked settings* is *Never* or *On export*), `appearance` (row → the keys of its items, all suggested) and `menus` (`classic`: the menus in theme locations; `navigation`: the navigations the items' content or the theme's templates use). Nothing is added to an export by itself.
+
+### eizport/get-reviews
+
+Input: `search`, `include` (only these), `page`, `per_page`. Returns `items` (`id`, `author`, `product`, `product_title`, `rating`, `excerpt`, `date`), `total`, `total_pages`; empty without WooCommerce.
+
+### eizport/export
+
+| Input | Type | Default |
+| --- | --- | --- |
+| `types` | object: post type → `{ "ids": [...] }` or `{ "filters": {...} }` | all content |
+| `media` | boolean: media files inside | `true` |
+| `media_used` | boolean: media used in content | `true` unless *Only attached media* |
+| `post_content` | boolean: `post_content/*.html` | *Content as .html files* |
+| `bundle` | boolean: `false` for WordPress's plain `.xml` | `true` |
+| `zip` | boolean: `.zip` instead of `.wxrz` | *Bundle as .zip* |
+| `options` | object: `groups`, `names`, `all`, `front_pages`, `linked` | none |
+| `blueprint` | object: `themes`, `plugins` (installed active or inactive as on this site), `mu_plugins` (must-use plugin files, as `get-export-options` lists them), `landing_page` (`"home"`, `"admin"`, `{ "page": ID }` or a path like `"/shop/"`), `language` (`"site"`, the default, `"user"`, `"en_US"` or an installed locale like `"pt_BR"`) — makes a Playground `.zip` | — |
+| `as_plugin` | boolean: a plugin `.zip` that imports its bundle ([as plugin](https://eizport.github.io/docs/exporting/as-plugin/)); not with `blueprint` | `false` |
+| `update_existing` | boolean: ask the import to update the items that already exist (same type and slug); saved in the bundle | `false` |
+| `reviews` | object: `ids` (comment IDs; `[]` for none) or `all` — WooCommerce product reviews | all of the products' reviews |
+| `appearance` | object: row (`theme_mods`, `custom_css`, `global_styles`, `global_css`, `templates`, `template_parts`, `widgets`, and [`advanced-custom-fields`](https://eizport.github.io/docs/exporting/advanced-custom-fields/) with ACF active, [`elementor`](https://eizport.github.io/docs/exporting/elementor/) with Elementor active) → `"all"` or the keys of its items (from `eizport/get-export-options`); a list of rows means each whole — the site's [look](https://eizport.github.io/docs/exporting/appearance/), with the media it uses; needs `bundle` | none |
+| `css_mode` | `end`, `start`, `replace` (the head/tail blocks of the same name the other site has; at the end with none) or `replace_all`: how the CSS rules are added on import; whoever imports can change it | `end` |
+| `css_markers` | head/tail comments around the CSS rules | Settings → Export |
+| `menus` | object: `classic` (menu term IDs, with their items and theme locations), `navigation` (`wp_navigation` IDs), or `all` — [menus](https://eizport.github.io/docs/exporting/menus/) | none (*all content* has them) |
+| `filename` | string, without extension | `<site>.WordPress.<date>` |
+
+Returns the copy:
+
+```json
+{
+  "name": "site-w9bjZ9pyEWxC8VMf.zip",
+  "format": "playground",
+  "size": 8178533,
+  "created": "2026-10-10T22:11:58+00:00",
+  "expires": "2026-10-11T22:11:58+00:00",
+  "download_url": "https://example.com/?eizport_playground=site-w9bjZ9pyEWxC8VMf.zip",
+  "playground_url": "https://playground.wordpress.net/?blueprint-url=…",
+  "command": "npx @wp-playground/cli@latest server --blueprint=./site-w9bjZ9pyEWxC8VMf.zip"
+}
+```
+
+`format` is `wxrz`, `zip`, `wxr`, `playground` or `plugin`; `expires` is `""` for copies kept until deleted. Errors: `eizport_invalid_type`, `eizport_invalid_options` (an option that is never exported), `eizport_invalid_blueprint` (a theme or plugin not installed), `eizport_export_unavailable`.
+
+### eizport/get-copies and eizport/delete-copies
+
+`get-copies` returns the list of copies, as above. `delete-copies` takes `names` (as `get-copies` returns them) or `all: true`, and returns `{ "deleted": 3 }`.
+
+### eizport/import
+
+Input: `copy` (a copy's name) or `attachment_id` (a `.wxrz`, `.zip`, `.xml` or `.xml.gz` in the media library). `update_existing` (boolean) updates the items that already exist (same type and slug) instead of adding copies; default: no — the bundle never decides it on its own. `options` (names) sets the bundle's options outside the [option groups](https://eizport.github.io/docs/exporting/options/#options-outside-the-groups-on-import) too; default: none. `css_mode` (`end`, `start`, `replace` — the head/tail blocks of the same name this site has, or at the end when there are none —, `replace_all`) and `css_markers` (boolean) change how the bundle's CSS rules are added ([appearance](https://eizport.github.io/docs/exporting/appearance/)); default: what the bundle asks. Needs the WordPress Importer installed. A plugin made [as plugin](https://eizport.github.io/docs/exporting/as-plugin/) is refused (`eizport_plugin_zip`): install it as a plugin. Returns `posts` (how many the importer created or found), `options` (the names set) and `log` (the importer's messages, as text).
+
+### Defaults
+
+- `eizport/get-export-defaults` — no input; returns `{ "types": …, "settings": … }` or `{}`.
+- `eizport/save-export-defaults` — input `types` and `settings` (the Export screen's state: `format`, `filename`, `media`, `option_names`, `option_groups`, `option_all`, `include_suggested`, `review_ids`, `review_all`, `as_plugin`, `update_existing`, `themes`, `plugins`); returns what was saved, sanitized.
+- `eizport/clear-export-defaults` — no input.
+
+### Settings
+
+`eizport/get-settings` returns `copy_lifetime`, `replace_export`, `classic_ui`, `style_import`, `content_files`, `attached_only`, `bundle_zip`, `defaults_scope`, `linked_options`, and the choices of each (`lifetime_choices`, `scope_choices`, `linked_choices`). `eizport/update-settings` takes any of those (values from the choices) and returns them all; unknown keys are refused.
+
+
+---
+
+## Hooks
+
+> Every filter and action of Eizport, with its parameters and an example.
+
+Source: https://eizport.github.io/docs/developers/hooks/
+
+All hooks are prefixed `eizport_`. Add them from a plugin or a theme's `functions.php`.
+
+### eizport_linked_options
+
+Options that point to a post, with the role they give it. They get the imported post's ID on import, show as a badge on the item, and can come with it ([linked settings](https://eizport.github.io/docs/exporting/options/#linked-settings)).
+
+```php
+add_filter( 'eizport_linked_options', function ( array $linked ) {
+	$linked['my_plugin_landing_page'] = array(
+		'label' => __( 'Landing page', 'my-plugin' ),     // The role, shown as a badge.
+		'with'  => array( 'my_plugin_landing_enabled' ),  // Options that go with it.
+		'when'  => array( 'my_plugin_mode' => 'landing' ), // Only while these hold these values.
+	);
+	return $linked;
+} );
+```
+
+| Param | |
+| --- | --- |
+| `array $linked` | Option name → `label` (string), `with` (string[], optional), `when` (option → value, optional) |
+
+### eizport_option_groups
+
+The groups of options offered on the screens and in `options.groups`.
+
+```php
+add_filter( 'eizport_option_groups', function ( array $groups ) {
+	$groups['my-plugin'] = array(
+		'label'   => __( 'My Plugin: layout and colors', 'my-plugin' ), // "Name: what it holds".
+		'options' => array( 'my_plugin_layout', 'my_plugin_colors' ),
+	);
+	return $groups;
+} );
+```
+
+### eizport_denied_options
+
+More options never exported — keys, tokens, licenses, version numbers. Returns names to **add**; WordPress's own denied options can't be removed.
+
+```php
+add_filter( 'eizport_denied_options', function ( array $names ) {
+	return array_merge( $names, array( 'my_plugin_api_key', 'my_plugin_db_version' ) );
+} );
+```
+
+### eizport_is_secret
+
+Whether a name — an option, a theme mod, a widget field — holds a secret, so it's never exported nor listed. By default: names with `secret`, `password`, `token`, `api_key`, `license`, `private`, `credential`, `access_key`, `auth_key` or `webhook`, and plugins' known stores of them (WP Mail SMTP, payment gateways). Mark your own, or let one through:
+
+```php
+add_filter( 'eizport_is_secret', function ( bool $secret, string $name ) {
+	return 'my_plugin_connection' === $name ? true : $secret;
+}, 10, 2 );
+```
+
+### eizport_media_used
+
+Attachments a post uses beyond what its content names, like a gallery stored in meta. Runs when some items are exported and *Only attached media* is off.
+
+```php
+add_filter( 'eizport_media_used', function ( array $used, WP_Post $post ) {
+	if ( 'portfolio' === $post->post_type ) {
+		$used = array_merge( $used, wp_parse_id_list( get_post_meta( $post->ID, 'gallery', true ) ) );
+	}
+	return $used;
+}, 10, 2 );
+```
+
+### eizport_term_media
+
+Term meta that hold an attachment ID, by taxonomy, like a category's image. The attachments go with the export (for the terms the items use), the manifest lists them (`term_media`), and the import points them to the imported attachments. The WooCommerce compatibility adds `product_cat` → `thumbnail_id`.
+
+```php
+add_filter( 'eizport_term_media', function ( array $keys ) {
+	$keys['portfolio_type'][] = 'cover_id';
+	return $keys;
+} );
+```
+
+Pair it with [`eizport_media_used`](#eizport_media_used), which adds the attachments to the export.
+
+### eizport_updated_from_import
+
+Fires after an existing post was updated from an imported item, with *Update existing* on. Use it to update what a plugin keeps elsewhere.
+
+```php
+add_action( 'eizport_updated_from_import', function ( int $id, array $post ) {
+	clean_post_cache( $id );
+}, 10, 2 );
+```
+
+### eizport_block_id_attributes
+
+Blocks whose attributes hold post IDs, mapped to the imported items when an import ends (core's Image, Gallery, Cover, Media & Text, File, Video, Audio and navigation links are there already). Add a plugin's block by its full name.
+
+```php
+add_filter( 'eizport_block_id_attributes', function ( array $blocks ) {
+	$blocks['my-plugin/card'] = array( 'imageId', 'postIds' ); // A number or an array of numbers.
+	return $blocks;
+} );
+```
+
+### eizport_menus_update_existing
+
+Whether an import replaces the items of the classic menus the site already has (`true`) or leaves them as they are (`false`, the default). *Update existing* turns it on for its import.
+
+```php
+add_filter( 'eizport_menus_update_existing', '__return_true' );
+```
+
+### eizport_suggested_items
+
+Posts an item suggests exporting too, like the products a block in its content shows. The Export screen shows them as *N suggested* in their type's row ([choosing items](https://eizport.github.io/docs/exporting/choosing-items/#suggestions)); nothing is added by itself. The WooCommerce compatibility uses it for products.
+
+```php
+add_filter( 'eizport_suggested_items', function ( array $suggested, WP_Post $post ) {
+	// A "related" block stores the post IDs it shows.
+	if ( preg_match_all( '/"relatedIds":\[([\d,]+)\]/', $post->post_content, $m ) ) {
+		foreach ( $m[1] as $list ) {
+			$suggested = array_merge( $suggested, wp_parse_id_list( $list ) );
+		}
+	}
+	return $suggested;
+}, 10, 2 );
+```
+
+Only posts of types that can be exported are suggested.
+
+### eizport_content_types
+
+The post types the Export screen offers as rows: post type => value of core's *content* radio. A plugin takes out its own types that travel another way (the Advanced Custom Fields compatibility removes ACF's field groups, post types and taxonomies).
+
+### eizport_look_items
+
+The items of a row next to the look's (`$items`, `$row`): a plugin fills its own row, each item with `key`, `label`, `details` and `preview` (`type` and `value`). Used by the Advanced Custom Fields compatibility for the `advanced-custom-fields` row.
+
+### eizport_look_data
+
+The options file's data for such a row (`$out`, `$row`, `$keys`: the item keys chosen): the row's entry goes in `$out`.
+
+### eizport_look_suggested
+
+The keys such a row suggests for the posts chosen (`$keys`, `$row`, `$chosen`: post type => IDs).
+
+### eizport_look_media
+
+The attachments the look chosen uses (`$ids`, `$choice`): a plugin's row adds the ones its items use (the Elementor row: images of templates and site settings).
+
+### eizport_content_file
+
+The file a post's content goes to with *Content as .html files* on (`$file`, `$post`): `null` for `post_content/<slug>.html`, or `array( 'extension' => 'json', 'data' => … )` for a page builder's design in its own format — the post's content then stays in the WXR, and the importer keeps the `.json` for whoever applies it when the import ends (`$GLOBALS['eizport_content_data']`, by the item's original ID). The Elementor compatibility uses it.
+
+### eizport_advanced_custom_fields_id_types
+
+The ACF field types whose values are IDs an import maps: type => `post`, `term` or `user`. Add a plugin's own field type:
+
+```php
+add_filter( 'eizport_advanced_custom_fields_id_types', function ( array $types ) {
+	$types['my_product_picker'] = 'post';
+	return $types;
+} );
+```
+
+### eizport_register_compat
+
+Action, on `plugins_loaded` (priority 20), where compatibilities hook the filters above. See [compatibilities](https://eizport.github.io/docs/developers/compatibilities/).
+
+### eizport_post_id_options
+
+Options that hold a post ID, mapped on import. By default, the keys of `eizport_linked_options`; kept for compatibility.
+
+| Param | |
+| --- | --- |
+| `string[] $names` | Option names |
+
+### eizport_post_content
+
+The content an imported item gets from its `post_content/` file.
+
+| Param | |
+| --- | --- |
+| `string\|null $content` | The file's content, or `null` when there is none |
+| `array $item` | `id` (original ID), `type`, `slug` |
+| `string $dir` | Folder the bundle was unpacked into |
+
+### eizport_wxrz_max_bytes
+
+The most a bundle may expand to when imported. Default `512 * MB_IN_BYTES`.
+
+### eizport_playground_blueprint
+
+The blueprint of a Playground `.zip`, before it is written.
+
+| Param | |
+| --- | --- |
+| `array $blueprint` | The blueprint (`steps`, `landingPage`…) |
+| `string $wxr_name` | The WXR's name inside the `.zip` |
+
+### eizport_playground_mu_plugins
+
+The must-use plugins a Playground `.zip` can take — without the platform's (WordPress Studio, hosts) and Eizport's own. Take a host's loader out, or put back one left out.
+
+| Param | |
+| --- | --- |
+| `array $choices` | File => plugin data, as `get_mu_plugins()` gives them |
+
+### eizport_selection_limit
+
+How many items each *By selection* list of the classic screen shows (the latest). Default `1000`.
+
+### eizport_copy_lifetime
+
+How long a copy lasts, in seconds; `0` keeps copies until deleted. Default: the one chosen in Settings.
+
+
+---
+
+## Compatibilities
+
+> Which plugins are supported (WooCommerce, Advanced Custom Fields, Elementor), how support is built from the public hooks, and how a plugin ships its own.
+
+Source: https://eizport.github.io/docs/developers/compatibilities/
+
+Support for another plugin is a **compatibility**: a file that uses only the public [hooks](https://eizport.github.io/docs/developers/hooks/). The plugin ships three, for WooCommerce, Advanced Custom Fields and Elementor; any plugin can add its own — or replace the bundled one.
+
+### At a glance
+
+| Plugin | Status | What to expect |
+| --- | --- | --- |
+| **WooCommerce** | Supported | Products, variations, orders and coupons as content types; shop, cart, checkout, my account and terms pages as linked settings; product galleries and category images; products shown by blocks suggested; product reviews in their own row; the product lookup table refreshed after an import |
+| **Advanced Custom Fields (ACF)** | Supported (6.1 or later, free) | Its post types, taxonomies and field groups in its own export format, on their own row, imported before the content; fields that store IDs remapped; field groups and linked posts suggested; image and file fields as media used |
+| **Elementor** | Supported (free) | Site settings (the Kit) and templates on their own row; pages' designs as `.json` files; all of it through Elementor's own exporter and importer, with images, templates and links remapped; templates and site settings suggested; generated CSS rebuilt |
+
+### Advanced Custom Fields
+
+Supported, with its own row: see [Advanced Custom Fields](https://eizport.github.io/docs/exporting/advanced-custom-fields/). In short:
+
+- **Post types, taxonomies and field groups** go in ACF's own export format and are imported before the content, updating the ones with the same key.
+- **Field values** travel in the posts' and terms' custom fields; the ones that hold IDs (image, file, post object, relationship, page link, taxonomy, user) are **remapped** to the items on the other site.
+- **ACF PRO** (repeater, flexible content, gallery, options pages, blocks) isn't covered yet; values on users don't travel (a WXR has no users).
+
+### Elementor
+
+Supported, with Elementor's own exporter and importer: see [Elementor](https://eizport.github.io/docs/exporting/elementor/). In short:
+
+- **Site settings** (the Kit) and **templates** go on their own row, in Elementor's formats, and come in through Elementor's own import; a later delivery updates them.
+- **Pages built with Elementor** carry their design as `post_content/<slug>.json`, brought in by Elementor's document import, with images, templates and links pointing to the other site's items.
+- **Elementor Pro** (Theme Builder, popups, forms) isn't covered yet; dynamic tags keep the IDs they hold.
+
+Using another plugin and want it supported? [Open an issue](https://github.com/eizport/eizport/issues) with what you export — or write a compatibility, below.
+
+### The WooCommerce compatibility
+
+`includes/compat/woocommerce.php`, registered on `eizport_register_compat` when `WooCommerce` exists:
+
+| Hook | Adds |
+| --- | --- |
+| `eizport_linked_options` | Shop, Cart, Checkout, My account and Terms and conditions pages, as roles |
+| `eizport_option_groups` | The *WooCommerce pages* group |
+| `eizport_denied_options` | `woocommerce_version`, `woocommerce_db_version` |
+| `eizport_media_used` | Product and variation galleries (`_product_image_gallery`), and the images of the products' categories |
+| `eizport_term_media` | Product categories' `thumbnail_id`, mapped to the imported image |
+| `import_end` | Saves each imported product the way WooCommerce does and refreshes its row in `wc_product_meta_lookup` (prices, SKU, stock: what the shop's filters and sorting read) |
+| `eizport_suggested_items` | Products that blocks and `[products ids="…"]` show in the items chosen |
+| `export_wp` + `query` | Product reviews: only the ones chosen, when the export says which (`reviews`) |
+
+### The Advanced Custom Fields compatibility
+
+`includes/compat/advanced-custom-fields.php`, registered on `eizport_register_compat` when ACF 6.1 or later is active, and `includes/import-advanced-custom-fields.php` for the import:
+
+| Hook | Adds |
+| --- | --- |
+| `eizport_content_types` | Leaves ACF's own post types out of the content rows |
+| `eizport_look_items`, `eizport_look_data`, `eizport_look_suggested` | The *Advanced Custom Fields (ACF)* row: its items, their export (ACF's format) and what the posts chosen suggest |
+| `eizport_media_used` | The attachments of image and file fields |
+| `eizport_suggested_items` | The posts of post object, relationship and page link fields |
+| `import_start` | Imports the post types, taxonomies and field groups (`acf_import_internal_post_type()`), and registers them |
+| `import_end` | Maps the IDs in the values and in field groups' location rules |
+| `wp_import_existing_post` | ACF's own posts in a WXR exist by key, not by title and date |
+
+### The Elementor compatibility
+
+`includes/compat/elementor.php`, registered on `eizport_register_compat` when Elementor is loaded, and `includes/import-elementor.php` for the import:
+
+| Hook | Adds |
+| --- | --- |
+| `eizport_content_types` | Leaves Elementor's library (templates and Kits) out of the content rows |
+| `eizport_look_items`, `eizport_look_data`, `eizport_look_suggested`, `eizport_look_media` | The *Elementor* row: the site settings and templates, their export (Elementor's formats), what the pages chosen suggest and the images they use |
+| `eizport_content_file` | A page built with Elementor as `post_content/<slug>.json` |
+| `wxr_export_skip_postmeta` | Its `_elementor_data`, `_elementor_page_settings` and `_elementor_css` out of the WXR, when the `.json` carries them |
+| `eizport_media_used` | The images of the pages' designs |
+| `import_end` | Templates, site settings and designs through Elementor's own import (`documents->create()`, the document's `import()`, the *Site_Settings* runner); the attachments marked so Elementor's import finds them; its CSS cache cleared |
+
+### Writing one
+
+```php
+add_action( 'eizport_register_compat', function () {
+	if ( ! class_exists( 'My_Plugin' ) ) {
+		return;
+	}
+	add_filter( 'eizport_linked_options', 'my_plugin_eizport_linked' );
+	add_filter( 'eizport_option_groups', 'my_plugin_eizport_groups' );
+	add_filter( 'eizport_denied_options', 'my_plugin_eizport_denied' );
+} );
+```
+
+`eizport_register_compat` fires on `plugins_loaded` at priority 20, after every plugin has loaded, so `class_exists()` checks are reliable.
+
+### Replacing the bundled one
+
+A plugin that ships its own support removes the bundled one first:
+
+```php
+remove_action( 'eizport_register_compat', 'Eizport\Compat\WooCommerce\register' );
+```
+
+### Testing
+
+Test the compatibility's functions directly, so tests pass without the other plugin installed, and check that it registers only when that plugin is active.
+
+
+---
+
+## WP-CLI
+
+> Export and import bundles from the command line with wp eizport export and wp eizport import, keep a delivery in a folder to compare, and run the abilities with wp eval.
+
+Source: https://eizport.github.io/docs/developers/wp-cli/
+
+### wp eizport export
+
+Exports as the Export screen does, to a copy kept on the site, and prints its path. Each run is a process of its own, so a script can make as many exports as it needs.
+
+```bash
+wp eizport export --types=page:43,product --options=basics,page_on_front
+wp eizport export --types=page:43+44 --as-plugin --update-existing --filename=delivery
+wp eizport export --types=page:43 --playground --themes=twentytwentyfive --plugins=woocommerce/woocommerce.php --landing=page:43 --language=pt_BR
+wp eizport export --types=page --menus=classic:18 --filename=header
+```
+
+| Argument | |
+| --- | --- |
+| `--types=<types>` | Content types, comma-separated: `type:ID+ID` for some items, the type alone for all of it. None: all content |
+| `--options=<options>` | Option groups (like `basics`) and option names, comma-separated |
+| `--appearance=<parts>` | The site's [look](https://eizport.github.io/docs/exporting/appearance/): `all`, or rows comma-separated, each whole or with its items' keys after a colon joined by `+` (`theme_mods:custom_logo+background_color,custom_css:r:1a2b3c4d5e`); with ACF active, `advanced-custom-fields` takes its [post types, taxonomies and field groups](https://eizport.github.io/docs/exporting/advanced-custom-fields/) (`advanced-custom-fields:group_abc123+post_type_def456`); with Elementor active, `elementor` takes its [site settings and templates](https://eizport.github.io/docs/exporting/elementor/) (`elementor:kit+t:28`) |
+| `--css-mode=<mode>` | How the CSS rules are added on import: `end` (default), `start`, `replace` (the block of the same name; at the end with none) or `replace_all` |
+| `--[no-]css-markers` | Head/tail comments around the CSS rules (default: Settings → Export) |
+| `--menus=<menus>` | [Menus](https://eizport.github.io/docs/exporting/menus/): `all`, or `classic:ID+ID` (menu term IDs) and `navigation:ID+ID` (`wp_navigation` IDs), comma-separated. None: no menus (all content already has them) |
+| `--[no-]media` | Media files inside; default: yes |
+| `--zip` | A `.zip` bundle instead of `.wxrz` |
+| `--as-plugin` | A [plugin](https://eizport.github.io/docs/exporting/as-plugin/) `.zip` that imports its bundle |
+| `--update-existing` | Ask the import to [update the items that already exist](https://eizport.github.io/docs/getting-started/importing/#updating-items-that-already-exist) |
+| `--playground` | A [Playground .zip](https://eizport.github.io/docs/formats/playground-zip/) instead of a bundle (not with `--as-plugin`, `--update-existing` or `--dir`) |
+| `--themes=<stylesheets>` | With `--playground`: themes to install, comma-separated (a child theme brings its parent) |
+| `--plugins=<files>` | With `--playground`: plugin files to install, comma-separated (`woocommerce/woocommerce.php`), active or inactive as on this site |
+| `--mu-plugins=<files>` | With `--playground`: must-use plugins to write, comma-separated files of `wp-content/mu-plugins` (`cpt.php`), with the folders they load |
+| `--landing=<where>` | With `--playground`: where it opens — `home` (default), `admin`, `page:ID` (saved as `/?pagename=<its path>`) or a path (`/shop/`) |
+| `--language=<language>` | With `--playground`: the language it opens in — `site` (default), `user`, `en_US` or an installed locale (`pt_BR`) |
+| `--filename=<name>` | File name, without extension |
+| `--dir=<folder>` | Also write the bundle's files to a folder (see below) |
+
+### A delivery in a folder
+
+`--dir` writes the bundle's files to a folder: `manifest.json`, the WXR **formatted line by line**, `post_content/*.html`, `uploads/…` and `options.json`. The bundle files a previous export wrote there are replaced; other files (`.git`, notes) stay. Keep the folder under version control and `git diff` shows what changed since the last delivery — a title, a price — besides the export's dates.
+
+```bash
+wp eizport export --types=page:43,product --filename=delivery --dir=deliveries/site
+git -C deliveries diff
+```
+
+The WXR in the folder keeps one name from one delivery to the next — `<--filename>.xml`, else `<site>.WordPress.xml`, without the date — so `git diff` shows what changed in it. The folder imports back with `wp eizport import <folder>`.
+
+### wp eizport import
+
+Imports a `.wxrz` or `.zip` bundle, a bundle folder (from `--dir`), a gzipped WXR (`.xml.gz`) or a plain `.xml` with the WordPress Importer — media from the bundle, `post_content/` files back in, options set at the end.
+
+```bash
+wp eizport import site.wxrz --user=admin
+```
+
+| Argument | |
+| --- | --- |
+| `<file>` | The file or bundle folder to import |
+| `--user=<login>` | Who the posts go to; default: the first administrator |
+| `--[no-]update-existing` | Update the items that already exist (same type and slug) instead of adding copies; default: no — the bundle never decides it on its own |
+| `--options=<names>` | The bundle's options outside the [option groups](https://eizport.github.io/docs/exporting/options/#options-outside-the-groups-on-import) to set too, comma-separated; default: none |
+| `--css-mode=<mode>` | How the bundle's CSS rules are added: `end`, `start`, `replace` (the head/tail blocks of the same name this site has; with none, at the end) or `replace_all`; default: what the bundle asks |
+| `--[no-]css-markers` | Head/tail comments around them; default: what the bundle asks |
+
+It needs the WordPress Importer plugin installed (it doesn't have to be active), in version 0.9.6 or newer; one newer than the version Eizport was tested with imports with a warning. A bundle made by a newer Eizport than this site's stops with an error that says which version it needs.
+
+### Exporting with the ability
+
+`wp eizport export` runs the [`eizport/export`](https://eizport.github.io/docs/developers/abilities/#eizportexport) ability; to pass what it has no flag for (filters, reviews), run the ability itself:
+
+```bash
+wp eval '
+wp_set_current_user( 1 );
+$copy = wp_get_ability( "eizport/export" )->execute( array(
+	"types"   => array( "page" => array( "ids" => array( 43 ) ) ),
+	"options" => array( "groups" => array( "basics" ) ),
+) );
+echo is_wp_error( $copy ) ? $copy->get_error_message() : $copy["download_url"];
+'
+```
+
+The copy is in `wp-content/uploads/eizport/tmp/`; one export per `wp` process.
+
+### Other abilities
+
+Any ability works the same way: `wp_get_ability( 'eizport/get-copies' )->execute()`, `wp_get_ability( 'eizport/delete-copies' )->execute( array( 'all' => true ) )`…
+
+
+---
+
+## FAQ
+
+### Is it safe to import a bundle from someone else?
+
+Only import files you trust, as with any WXR file. When a bundle is opened, only the files its manifest lists are written, only under a private folder, only with file types WordPress allows to be uploaded (never PHP), and never outside that folder. The folder is deleted when the import ends or is abandoned.
+
+### Which plugins are supported?
+
+WooCommerce, with its own support: products, orders and coupons, its pages as linked settings, product galleries, the products its blocks show (suggested) and product reviews. Advanced Custom Fields (ACF), with its own support too: its post types, taxonomies and field groups on a row of their own, in ACF's export format, imported before the content, and the fields that store IDs (image, file, post object, relationship, page link, taxonomy, user) remapped on import. Elementor, with its own support as well, through Elementor's own exporter and importer: its site settings (the Kit) and templates on a row of their own, each page's design as a .json file, and on import the images, templates and links inside them pointing to the items on the other site. The docs explain what to expect: https://eizport.github.io/docs/developers/compatibilities/
+
+### What is an "as plugin" file?
+
+A plugin .zip that holds the bundle. Install it on the other site (Plugins → Add Plugin → Upload Plugin) and click Run import on its row on the Plugins screen: it checks that Eizport and the WordPress Importer are there, imports the bundle with one click, and then offers to delete itself.
+
+### Does it work on multisite?
+
+Yes. Activate it on the network or on each site: every site exports and imports on its own (its files in its own uploads folder, its own saved defaults), links are mapped between subsites, and uninstalling cleans every site. Site administrators export and import; WordPress filters imported content for those who can't post unfiltered HTML. Docs: https://eizport.github.io/docs/getting-started/multisite/
+
+### Is there a size limit?
+
+Uploads are limited by your server's PHP settings (upload_max_filesize and post_max_size), which apply to the compressed file. A bundle may expand to 512 MB by default; developers can change it with the eizport_wxrz_max_bytes filter.
+
+### Does it send data anywhere?
+
+Not to its authors: Eizport has no service of its own. It uses WordPress.org's plugin and theme information and downloads, as WordPress does, and opens WordPress Playground only when you click to; see "External services" for what is sent and when. When importing a bundle, the importer's attachment downloads are answered from the bundle on your own server.
+
+### What does the Playground blueprint do?
+
+It installs the plugins and themes in the .zip, sets the language chosen (with its translations), writes the must-use plugins chosen (with the folders they load) and imports the WXR with Playground's own importer. With media or content files, they are written into Playground first and a temporary must-use plugin answers the importer's downloads from the media files and puts each .html file into its post, and a second one sets the settings when the import ends, with their IDs mapped; all of it is removed after the import. The WordPress Importer is installed by Playground itself, from WordPress.org.
+
+### Who can download a Playground copy?
+
+Anyone with its link: the file name ends in a random 16-character token, so it can't be guessed, and it is served only until it expires (a day by default; see the plugin's Settings, where it can also be "until deleted"), then deleted. On a site on your computer (like localhost), the link only works in your own browser. Don't keep copies of content that must stay private.
+
+### Where are the files kept?
+
+In wp-content/uploads/eizport/tmp/: Playground copies, and the folders of bundles being imported. Everything there is temporary, and the tmp folder itself is deleted once it is empty. Uninstalling the plugin deletes uploads/eizport/ and the plugin's settings.
+
+### Where is the source code?
+
+The PHP is in the plugin, readable. The Export and Settings screens' JavaScript in build/ is compiled; each file ships next to its unminified version, and its source (TypeScript, in routes/ and src/) is at https://github.com/eizport/eizport — build it with npm ci && npm run build (@wordpress/build).
+
+---
+
+## Changelog
+
+### 1.1.0
+
+- Added: Playground options: a Language group — the Playground .zip opens in the site's language (the default), yours or English, with the translations of WordPress, the themes and the plugins (fetched from WordPress.org, or this site's inside the .zip).
+- Added: Block themes: templates and template parts edited in the Site Editor on rows of their own (Editor templates, Editor template parts), item by item with a preview. They travel in the WXR with the images they use; on import each replaces the same template of the same theme instead of adding a copy ("Header 2"), and its navigations, images and links point to the ones on the other site.
+- Added: Elementor, with its own exporter and importer: a row of its own exports the site settings (the Kit) and templates in Elementor's formats; pages built with Elementor carry their design as post_content/<slug>.json; on import, Elementor's own import brings them in, with the images the bundle brought, templates and links pointing to the items there, and a later delivery updates instead of adding copies; also in Playground.
+- Added: Advanced Custom Fields (ACF): a row of its own exports its post types, taxonomies and field groups in ACF's own export format, imported before the content (updated by key); the fields that store IDs (image, file, post object, relationship, page link, taxonomy, user) are remapped on import, also in Playground; field groups, linked posts and the media of image and file fields are suggested or come along.
+- Added: Bundles say which Eizport made them and the oldest that reads them: a bundle that needs a newer Eizport is refused with a message that says which version (on the upload, wp eizport import, the import ability and a bundle plugin's screen, which offers Update now); bundles from 1.0.x still import. The WordPress Importer must be 0.9.6 or newer; a version newer than the tested one imports with a warning. The manifest names its JSON Schema (https://eizport.github.io/schemas/1.1/manifest.json): editors check a manifest edited by hand, and the import checks it against the same schema.
+- Added: Multisite: each site of a network exports and imports on its own — saved defaults per site, files in the site's uploads, links mapped between subsites — and uninstalling cleans every site.
+- Added: Export the site's look on rows of its own, item by item — Customizer theme mods and custom CSS rules, the Site Editor's style groups and CSS rules, widgets (classic and block) — with a preview of each and the media they use. On import, CSS rules are added to the other site's CSS (at the end, at the start, or replacing it) between head/tail comments named after the file; theme mods, style groups and widgets join the other site's instead of replacing them.
+- Added: Export navigation menus on their own row — classic menus with their items and theme locations, and block navigations — and bring them back on import, pointing to the imported pages.
+- Added: Playground options: must-use plugins — the ones chosen go in the Playground .zip with the folders they load, and the blueprint writes them before the import (not the platform's loaders nor Eizport's own).
+- Added: Playground options: the button (renamed from "Themes and plugins") also sets where the Playground .zip opens — the home page, the dashboard, a page of the site (as a relative path) or a path —, its two groups open one at a time.
+- Changed: The plugin's row on the Plugins screen keeps only Settings: no "Import .wxrz" or "Install the WordPress Importer" link — importing starts from Tools → Import.
+- Changed: A bundle plugin's screen is one screen, with or without Eizport: Eizport is one more line in Before importing (Install Now, Activate or Update now, done right there), and what needs it waits — What it holds dimmed, Update existing and Run import disabled. The screen is no longer an item under Tools: Run import, on the plugin's row on the Plugins screen, opens it. Tools → Import lists it too, set apart from the other importers, and shows the list while it waits. "Update existing" names the content types the export holds — on the Export screen, the importer's step 1 and a bundle plugin's screen — and isn't offered with none.
+- Changed: The Options row's Basics and Appearance groups no longer carry the theme mods (they have their own row) and now carry the block themes' site logo; imported theme mods are merged into the site's instead of replacing them.
+- Changed: What a file holds no longer decides on its own: an import sets the options of the groups, the theme mods and the widgets, and any other option in the file only when whoever imports checks it (step 1 of the importer, a bundle plugin's screen) or names it (--options, the ability's options); WP-CLI and the ability update existing items only when asked. Options, theme mods and widget fields named like secrets (passwords, tokens, API and license keys) are never exported nor listed. On a network, a site administrator's Playground .zip takes only the plugins active on that site and the themes it may use.
+- Changed: Bundles are plain .zip files by default (Settings → Export → "Bundle as .zip" now on), inside a plugin made as plugin too; turned off, they are .wxrz as before.
+- Fixed: Imported content keeps working with its media and pages: the IDs in Image, Gallery, Cover, Media & Text, File, Video and Audio blocks, in navigation links and in block widgets point to the imported items, not to the other site's.
+- Fixed: Links to the source site in imported content — pages, products, categories, navigation links, menus' custom links, widgets — point to this site after an import, in new and updated items.
+- Fixed: An attachment the site already has gets its URLs in the imported content pointed to the file here on every import, not only with "Update existing" on.
+- Fixed: Checked with the WordPress Importer 0.9.7: an edited image's link to its original is mapped on import instead of dropped (or left pointing at the exporting site's ID with 0.9.6).
+- Fixed: The Playground .zip installs a theme or plugin from the WordPress.org directory only in a version the directory has; a development, beta or RC copy goes inside the .zip. Without Eizport, a bundle plugin installs it from the plugin directory.
+- Fixed: An export of chosen types carries its terms in full — description, parent and term meta (a product category's thumbnail and display type), with their ancestors — not only their names.
+- Fixed: The Playground .zip installs plugins active or inactive as they are on the site, instead of activating them all.
+- Fixed: A .zip bundle is read in blocks against its real size (an entry that says it is small but inflates to more is refused, and no entry is loaded whole in memory), and needs PHP's ZipArchive; "Run import" only runs for a bundle plugin active on the site; the Playground landing page only opens a path of the exported site; uninstall also removes the note of imported widgets.
+- Fixed: Importing a file made elsewhere is safer for users who may not post unfiltered HTML (a site admin on a network): templates, template parts and widgets from the file go through the same HTML filter as other content, custom CSS needs the right to edit CSS, Advanced Custom Fields items need ACF's own capability and never bring PHP callbacks, an existing page keeps its Elementor design unless the import updates existing items, and a malformed source address in the file never rewrites links.
+
+### 1.0.1
+
+- Fixed: Settings → Export → "As plugin: allow importing again" is saved.
+- Scripts and styles of the classic Export screen, the importer and the Export and Settings screens are enqueued files.
+- Keeping a Playground copy, which writes a file, needs the Export form's nonce.
+- readme: an "External services" section on what is sent to WordPress.org, WordPress Playground and GitHub, and when.
+
+### 1.0.0
+
+- Initial release.
