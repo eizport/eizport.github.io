@@ -1,0 +1,5 @@
+# Everyone, AI agents included, is welcome. Docs as Markdown: /llms.txt
+User-agent: *
+Allow: /
+
+Sitemap: https://eizport.github.io/sitemap-index.xml
